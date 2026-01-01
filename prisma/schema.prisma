@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  name      String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+
+  courses   Course[] @relation("UserCourses")
+  saved     SavedCourse[]
+}
+
+model Course {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  description   String?
+  
+  // Playlist info
+  playlistId    String?   // YouTube playlist ID
+  source        String    @default("youtube") // youtube | custom
+  thumbnail     String?
+  totalVideos   Int?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  authorId      String    @db.ObjectId
+  author        User      @relation("UserCourses", fields: [authorId], references: [id])
+
+  lessons       Lesson[]
+  savedBy       SavedCourse[]
+  shareId       String    @unique @db.ObjectId
+}
+
+model Lesson {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  title       String
+  videoId     String       // YouTube video ID
+  embedUrl    String
+  duration    Int?         // in seconds
+  order       Int
+
+  courseId    String   @db.ObjectId
+  course      Course  @relation(fields: [courseId], references: [id])
+
+  createdAt   DateTime @default(now())
+}
+
+model SavedCourse {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  courseId  String   @db.ObjectId
+  savedAt   DateTime @default(now())
+
+  user       User    @relation(fields: [userId], references: [id])
+  course     Course  @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+}

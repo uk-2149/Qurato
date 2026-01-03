@@ -7,7 +7,9 @@ import { fetchPlaylistVideos } from "@/lib/youtube";
 interface Video {
   title: string;
   videoId: string;
+  description: string;
   embedUrl: string;
+  thumbnail: string;
   order: number;
 }
 
@@ -76,6 +78,7 @@ export async function POST(req: Request) {
         playlistId,
         source: "youtube",
         totalVideos: videos.length,
+        thumbnail: videos[0]?.thumbnail || null,
         author: {
           connect: { email: session.user.email },
         },
@@ -88,6 +91,8 @@ export async function POST(req: Request) {
       data: videos.map((video: Video) => ({
         title: video.title,
         videoId: video.videoId,
+        description: video.description,
+        thumbnail: video.thumbnail,
         embedUrl: `https://www.youtube.com/embed/${video.videoId}`,
         order: video.order,
         courseId: course.id,

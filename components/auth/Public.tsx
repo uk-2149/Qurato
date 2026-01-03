@@ -9,7 +9,7 @@ const Public = async ({ children }: { children: React.ReactNode }) => {
     return <div>{children}</div>;
   }
 
-  redirect("/");
+  redirect("/dashboard");
 };
 
 export default Public;

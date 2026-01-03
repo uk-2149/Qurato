@@ -22,7 +22,7 @@ export async function GET() {
             savedBy: {
               some: {
                 user: {
-                  email: session.user.email, 
+                  email: session.user.email,
                 },
               },
             },
@@ -32,8 +32,28 @@ export async function GET() {
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        author: {
+          select: { email: true },
+        },
+      },
     });
-    return NextResponse.json({ courses });
+
+    // Normalize data
+    const formatted = courses.map((course) => ({
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      thumbnail: course.thumbnail,
+      totalVideos: course.totalVideos,
+      type:
+        course.author.email === session.user.email
+          ? "created"
+          : "saved",
+      shareId: course.shareId,
+    }));
+
+    return NextResponse.json({ courses: formatted });
   } catch (error) {
     console.error("Get all courses error:", error);
     return NextResponse.json(

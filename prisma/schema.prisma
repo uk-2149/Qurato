@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../prismaC/client"
 }
 
 datasource db {
@@ -14,6 +14,7 @@ model User {
   name      String?
   imageUrl  String?
   createdAt DateTime @default(now())
+  hashedPassword  String?
 
   courses   Course[] @relation("UserCourses")
   saved     SavedCourse[]
@@ -38,7 +39,8 @@ model Course {
 
   lessons       Lesson[]
   savedBy       SavedCourse[]
-  shareId       String    @unique @db.ObjectId
+  shareId       String     @unique
+
 }
 
 model Lesson {
@@ -46,6 +48,8 @@ model Lesson {
 
   title       String
   videoId     String       // YouTube video ID
+  description String?
+  thumbnail   String?
   embedUrl    String
   duration    Int?         // in seconds
   order       Int

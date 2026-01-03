@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     }
 
     // Check existing user
-    const existingUser = await prisma.user.findOne({
+    const existingUser = await prisma.user.findFirst({
       where: {
         email: email,
       },

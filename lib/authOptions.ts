@@ -70,7 +70,7 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           token.name = dbUser.name;
           token.email = dbUser.email;
-          token.imageUrl = dbUser.imageUrl;
+          token.imageUrl = dbUser.imageUrl || undefined;
         }
       }
 

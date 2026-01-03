@@ -31,11 +31,22 @@ export async function POST(req: Request) {
             );
         }
 
+        // const user = await prisma.user.findUnique({
+        //     where: { email: session.user.email },
+        // });
+
+        // if (!user) {
+        //     return NextResponse.json(
+        //         { error: "User not found" },
+        //         { status: 404 }
+        //     );
+        // }
+
         await prisma.course.update({
             where: { id: courseId },
             data: {
                 savedBy: {
-                    connect: { email: session.user.email },
+                    connect: { id: session.user.id },
                 },
             },
         });

@@ -1,22 +1,22 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-// GET /api/course?courseId=abc123
+// GET /api/course/getCourse?sId=abc123
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const courseId = searchParams.get("courseId");
+    const shareId = searchParams.get("sId");
 
-    if (!courseId) {
+    if (!shareId) {
       return NextResponse.json(
-        { error: "Course ID is required" },
+        { error: "Share ID is required" },
         { status: 400 }
       );
     }
 
     const course = await prisma.course.findUnique({
-      where: { id: courseId },
+      where: { shareId },
       include: {
         lessons: {
           orderBy: { order: "asc" },

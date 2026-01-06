@@ -51,6 +51,8 @@ export async function GET() {
           ? "created"
           : "saved",
       shareId: course.shareId,
+      source: course.source,
+      playListId: course.playlistId,
     }));
 
     return NextResponse.json({ courses: formatted });

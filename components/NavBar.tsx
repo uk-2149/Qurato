@@ -6,12 +6,15 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import CreateCourseModal from "./CreateCourse";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Course } from "@/types";
 
 interface NavBarProps {
   otherPage: boolean;
+  handleCreateCourse?: (newCourse: Course) => void;
 }
 
-function NavBar({ otherPage }: NavBarProps) {
+function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
   //   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [open, setOpen] = useState(false);
 
@@ -25,20 +28,21 @@ function NavBar({ otherPage }: NavBarProps) {
         }`}
       >
         {/* back button */}
+        <Link href="/dashboard">
         <div
-          className={`backdrop-blur-xl bg-black/80 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden hover:cursor-pointer ${
+          className={`backdrop-blur-xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-lg hover:shadow-xl overflow-hidden hover:cursor-pointer transition-all ${
             otherPage ? "" : "hidden"
           } px-8 py-6`}
         >
           <button
-            onClick={() => redirect('/dashboard')}
-            className="flex items-center gap-2 text-white hover:text-gray-300 transition hover:cursor-pointer"
+            className="flex items-center gap-2 text-zinc-900 dark:text-white hover:text-zinc-700 dark:hover:text-zinc-200 transition hover:cursor-pointer"
           >
             ←
           </button>
         </div>
+        </Link>
         <div
-          className={`backdrop-blur-xl bg-black/80 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden ${
+          className={`backdrop-blur-xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-lg hover:shadow-xl overflow-hidden transition-all ${
             otherPage ? "w-[90vw] max-w-7xl" : ""
           }`}
         >
@@ -48,7 +52,7 @@ function NavBar({ otherPage }: NavBarProps) {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-2xl md:text-3xl font-bold bg-linear-to-r from-white to-gray-300 bg-clip-text text-transparent"
+              className="text-2xl md:text-3xl font-bold bg-linear-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent"
             >
               Qurato
             </motion.h1>
@@ -61,9 +65,7 @@ function NavBar({ otherPage }: NavBarProps) {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.1 }}
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-300 text-white bg-white/10 dark:bg-white/20'`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  className="relative px-4 py-2 rounded-lg font-medium transition-all duration-300 text-zinc-900 dark:text-white bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-900 hover:cursor-pointer"
                 >
                   Create +
                   <motion.div

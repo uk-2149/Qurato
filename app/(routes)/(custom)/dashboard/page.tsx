@@ -2,20 +2,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import NavBar from "@/components/NavBar";
 import AllCourses from "@/components/AllCourses";
+import Private from "@/components/auth/Private";
+import { redirect } from "next/navigation";
 
 export default async function Page() {
   const session = await getServerSession(authOptions);
 
-  if (!session) return null;
-
-  // later replace with real DB calls
-//   const createdCourses = [];
-//   const savedCourses = [];
-
-
-
+  if (!session) redirect("/login");
 
   return (
+    <Private>
     <div className="min-h-screen bg-white dark:bg-black">
       <NavBar otherPage={false} />
 
@@ -27,5 +23,6 @@ export default async function Page() {
         <AllCourses />
       </div>
     </div>
+    </Private>
   );
 }

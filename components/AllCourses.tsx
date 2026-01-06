@@ -4,6 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import EditCourse from "./EditCourse";
+import { Share2 } from "lucide-react";
+import ShareCourseModal from "./ShareCourse";
 
 type Course = {
   id: string;
@@ -13,6 +16,8 @@ type Course = {
   totalVideos?: number;
   type: "created" | "saved";
   shareId: string;
+  source: "youtube" | "custom";
+  playlistId?: string;
 };
 
 type FilterType = "all" | "created" | "saved";
@@ -22,6 +27,11 @@ export default function AllCourses() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | undefined>(
+    undefined
+  );
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -40,6 +50,16 @@ export default function AllCourses() {
 
     fetchCourses();
   }, []);
+
+  const handleUpdateCourse = (updated: Course) => {
+    setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+  };
+
+  // const handleCreateCourse = (newCourse: Course) => {
+  //   setCourses((prev) => [newCourse, ...prev]);
+  // }
+
+  // Context API
 
   const handleDeleteCourse = async (courseId: string) => {
     const confirmed = window.confirm(
@@ -74,47 +94,66 @@ export default function AllCourses() {
   }, [courses, filter]);
 
   return (
-    <div className="mt-8 space-y-8">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">
-          Your Courses
-        </h2>
+    <>
+      <div className="mt-8 space-y-8">
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">
+            Your Courses
+          </h2>
 
-        {/* FILTERS */}
-        <div className="flex gap-2 justify-evenly bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg">
-          <FilterButton
-            label="All"
-            active={filter === "all"}
-            onClick={() => setFilter("all")}
-          />
-          <FilterButton
-            label="Created"
-            active={filter === "created"}
-            onClick={() => setFilter("created")}
-          />
-          <FilterButton
-            label="Saved"
-            active={filter === "saved"}
-            onClick={() => setFilter("saved")}
-          />
+          {/* FILTERS */}
+          <div className="flex gap-2 justify-evenly bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg">
+            <FilterButton
+              label="All"
+              active={filter === "all"}
+              onClick={() => setFilter("all")}
+            />
+            <FilterButton
+              label="Created"
+              active={filter === "created"}
+              onClick={() => setFilter("created")}
+            />
+            <FilterButton
+              label="Saved"
+              active={filter === "saved"}
+              onClick={() => setFilter("saved")}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* COURSES */}
-      {loading ? (
-        <CourseSkeleton />
-      ) : filteredCourses.length === 0 ? (
-        <EmptyState text="No courses found, Create a course" />
-      ) : (
-        <CourseGrid
-          courses={filteredCourses}
-          openMenuId={openMenuId}
-          setOpenMenuId={setOpenMenuId}
-          onDelete={handleDeleteCourse}
-        />
-      )}
-    </div>
+        {/* COURSES */}
+        {loading ? (
+          <CourseSkeleton />
+        ) : filteredCourses.length === 0 ? (
+          <EmptyState text="No courses found, Create a course" />
+        ) : (
+          <CourseGrid
+            courses={filteredCourses}
+            openMenuId={openMenuId}
+            setOpenMenuId={setOpenMenuId}
+            onDelete={handleDeleteCourse}
+            setOpen={setOpen}
+            setSelectedCourse={setSelectedCourse}
+            setShareOpen={setShareOpen}
+          />
+        )}
+      </div>
+      <EditCourse
+        course={selectedCourse}
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        onUpdated={(updatedCourse) => {
+          handleUpdateCourse(updatedCourse);
+          setOpen(false);
+        }}
+      />
+      <ShareCourseModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        shareId={selectedCourse?.shareId || ""}
+      />
+    </>
   );
 }
 
@@ -166,11 +205,17 @@ function CourseGrid({
   openMenuId,
   setOpenMenuId,
   onDelete,
+  setOpen,
+  setSelectedCourse,
+  setShareOpen,
 }: {
   courses: Course[];
   openMenuId: string | null;
   setOpenMenuId: (id: string | null) => void;
   onDelete: (courseId: string) => void;
+  setOpen: (open: boolean) => void;
+  setSelectedCourse: (course: Course | undefined) => void;
+  setShareOpen: (open: boolean) => void;
 }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -178,9 +223,9 @@ function CourseGrid({
         <Link
           key={course.id}
           href={`/course/${course.shareId}`}
-          className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:shadow-lg transition overflow-hidden"
+          className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-gray-100 dark:bg-zinc-900 hover:shadow-lg transition overflow-hidden"
         >
-          <div className="relative h-40 bg-zinc-100 dark:bg-zinc-800">
+          <div className="relative h-45 bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
             {course.thumbnail ? (
               <Image
                 src={course.thumbnail}
@@ -220,7 +265,8 @@ function CourseGrid({
                       onClick={(e) => {
                         e.preventDefault();
                         setOpenMenuId(null);
-                        console.log("Edit", course.id);
+                        setSelectedCourse(course);
+                        setOpen(true);
                       }}
                       className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     >
@@ -236,6 +282,16 @@ function CourseGrid({
                       className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     >
                       Delete
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOpenMenuId(null);
+                        setShareOpen(true);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                      Share
                     </button>
                   </div>
                 )}

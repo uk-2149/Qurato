@@ -1,61 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Course } from "@/types";
 
 interface Props {
+  course?: Course;
   isOpen: boolean;
   onClose: () => void;
-  onCreated?: () => void;
+  onUpdated?: (updatedCourse: Course) => void;
 }
 
-export default function CreateCourseModal({
+export default function EditCourseModal({
+  course,
   isOpen,
   onClose,
-  onCreated,
+  onUpdated,
 }: Props) {
+  const [loading, setLoading] = useState(false);
+
+  const playListLink =
+    `https://www.youtube.com/playlist?list=${course?.playlistId}` || "";
+  const source = course?.source || "custom";
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [source, setSource] = useState<"youtube" | "custom">("youtube");
-  const [playListLink, setplayListLink] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [videoLinks, setVideoLinks] = useState<string[]>([""]);
+
+  useEffect(() => {
+    if (course && isOpen) {
+      setTitle(course.title);
+      setDescription(course.description ?? "");
+    }
+  }, [course, isOpen]);
 
   if (!isOpen) return null;
 
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setplayListLink("");
-    setSource("youtube");
-    setVideoLinks([""]);
-  };
-
-  const extractPlaylistId = (url: string) => {
-    if (url.includes("list=")) {
-      return url.split("list=")[1].split("&")[0];
-    }
-    return url;
-  };
-
-  const updateVideoLink = (index: number, value: string) => {
-    const updated = [...videoLinks];
-    updated[index] = value;
-    setVideoLinks(updated);
-
-    // auto-add new empty field if last is filled
-    if (index === videoLinks.length - 1 && value.trim() !== "") {
-      setVideoLinks([...updated, ""]);
-    }
-  };
-
-  const removeVideoLink = (index: number) => {
-    setVideoLinks(videoLinks.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
-    if (!title.trim()) {
+    if (!title?.trim()) {
       toast.error("Please enter a course title.");
       return;
     }
@@ -68,22 +55,13 @@ export default function CreateCourseModal({
     try {
       setLoading(true);
 
-      const playlistId =
-        source === "youtube" ? extractPlaylistId(playListLink) : null;
-
-      console.log("Datas:", playListLink, playlistId);
-
-      const res = await fetch("/api/course/createCourse", {
-        method: "POST",
+      const res = await fetch("/api/course/updateCourse", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          courseId: course?.id,
           title,
           description,
-          source,
-          playlistId,
-          links: source === "custom"
-            ? videoLinks.filter((link) => link.trim() !== "")
-            : [],
         }),
       });
 
@@ -93,14 +71,14 @@ export default function CreateCourseModal({
         throw new Error(data.error || "Something went wrong");
       }
 
-      toast.success("Course created 🎉");
+      toast.success("Course updated successfully!");
 
       resetForm();
-      onCreated?.();
+      onUpdated?.(data.course);
       onClose();
     } catch (error: unknown) {
       toast.error("Unexpected error occurred");
-      console.error("Create course error:", error);
+      console.error("Update course error:", error);
     } finally {
       setLoading(false);
     }
@@ -156,10 +134,9 @@ export default function CreateCourseModal({
           <div>
             <label className="text-sm text-zinc-500">Course Type</label>
             <div className="flex gap-2 mt-2">
-              {["youtube", "custom"].map((type) => (
+              {[source].map((type) => (
                 <button
                   key={type}
-                  onClick={() => setSource(type as "youtube" | "custom")}
                   className={`px-4 py-2 rounded-lg text-sm border transition ${
                     source === type
                       ? "bg-indigo-600 text-white border-indigo-600"
@@ -180,47 +157,10 @@ export default function CreateCourseModal({
               </label>
               <input
                 value={playListLink}
-                onChange={(e) => setplayListLink(e.target.value)}
+                readOnly
                 placeholder="PLxxxxxx"
                 className="w-full mt-1 px-4 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700"
               />
-            </div>
-          )}
-
-          {/* Custom Course Videos */}
-          {source === "custom" && (
-            <div className="space-y-3">
-              <label className="text-sm text-zinc-500">Video Links</label>
-
-              <div className="space-y-2 mt-2">
-                {videoLinks.map((link, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <input
-                      value={link}
-                      onChange={(e) => updateVideoLink(index, e.target.value)}
-                      placeholder="https://youtube.com/watch?v=..."
-                      className="flex-1 px-4 py-2 rounded-lg
-                       bg-zinc-100 dark:bg-zinc-800
-                       border border-zinc-200 dark:border-zinc-700
-                       focus:ring-2 focus:ring-indigo-500
-                       transition"
-                    />
-
-                    {/* Remove button */}
-                    {videoLinks.length > 1 && (
-                      <button
-                        onClick={() => removeVideoLink(index)}
-                        className="p-2 rounded-lg
-                         text-zinc-400 hover:text-red-500
-                         hover:bg-zinc-100 dark:hover:bg-zinc-800
-                         transition"
-                      >
-                        <X size={16} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
             </div>
           )}
         </div>
@@ -240,7 +180,7 @@ export default function CreateCourseModal({
             className="px-5 py-2 rounded-lg bg-indigo-600 text-white flex items-center gap-2 hover:bg-indigo-700 transition disabled:opacity-60"
           >
             {loading && <Loader2 className="animate-spin" size={16} />}
-            Create Course
+            Update Course
           </button>
         </div>
       </div>

@@ -18,6 +18,7 @@ type Course = {
   shareId: string;
   source: "youtube" | "custom";
   playlistId?: string;
+  authorId: string;
 };
 
 type FilterType = "all" | "created" | "saved";
@@ -140,7 +141,7 @@ export default function AllCourses() {
         )}
       </div>
       <EditCourse
-        course={selectedCourse}
+        course={selectedCourse as Course}
         isOpen={open}
         onClose={() => setOpen(false)}
         onUpdated={(updatedCourse) => {

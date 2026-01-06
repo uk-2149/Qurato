@@ -34,6 +34,10 @@ const config: runtime.GetPrismaClientConfig = {
         "fromEnvVar": null,
         "value": "darwin-arm64",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "rhel-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -47,6 +51,7 @@ const config: runtime.GetPrismaClientConfig = {
     "db"
   ],
   "activeProvider": "mongodb",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -55,8 +60,8 @@ const config: runtime.GetPrismaClientConfig = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../prismaC/client\"\n}\n\ndatasource db {\n  provider = \"mongodb\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id             String   @id @default(auto()) @map(\"_id\") @db.ObjectId\n  email          String   @unique\n  name           String?\n  imageUrl       String?\n  createdAt      DateTime @default(now())\n  hashedPassword String?\n\n  courses Course[]      @relation(\"UserCourses\")\n  saved   SavedCourse[]\n}\n\nmodel Course {\n  id          String  @id @default(auto()) @map(\"_id\") @db.ObjectId\n  title       String\n  description String?\n\n  // Playlist info\n  playlistId  String? // YouTube playlist ID\n  source      String  @default(\"youtube\") // youtube | custom\n  thumbnail   String?\n  totalVideos Int?\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  authorId String @db.ObjectId\n  author   User   @relation(\"UserCourses\", fields: [authorId], references: [id])\n\n  lessons Lesson[]\n  savedBy SavedCourse[]\n  shareId String        @unique\n}\n\nmodel Lesson {\n  id String @id @default(auto()) @map(\"_id\") @db.ObjectId\n\n  title       String\n  videoId     String // YouTube video ID\n  description String?\n  thumbnail   String?\n  embedUrl    String\n  duration    Int? // in seconds\n  order       Int\n\n  courseId String @db.ObjectId\n  course   Course @relation(fields: [courseId], references: [id])\n\n  createdAt DateTime @default(now())\n}\n\nmodel SavedCourse {\n  id       String   @id @default(auto()) @map(\"_id\") @db.ObjectId\n  userId   String   @db.ObjectId\n  courseId String   @db.ObjectId\n  savedAt  DateTime @default(now())\n\n  user   User   @relation(fields: [userId], references: [id])\n  course Course @relation(fields: [courseId], references: [id])\n\n  @@unique([userId, courseId])\n}\n",
-  "inlineSchemaHash": "c0709294c724c82078ff4b75d01bb39aaef248b0a22ffe003c9c6ed729ebed8f",
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client\"\n  output        = \"../prismaC/client\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"mongodb\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id             String   @id @default(auto()) @map(\"_id\") @db.ObjectId\n  email          String   @unique\n  name           String?\n  imageUrl       String?\n  createdAt      DateTime @default(now())\n  hashedPassword String?\n\n  courses Course[]      @relation(\"UserCourses\")\n  saved   SavedCourse[]\n}\n\nmodel Course {\n  id          String  @id @default(auto()) @map(\"_id\") @db.ObjectId\n  title       String\n  description String?\n\n  // Playlist info\n  playlistId  String? // YouTube playlist ID\n  source      String  @default(\"youtube\") // youtube | custom\n  thumbnail   String?\n  totalVideos Int?\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  authorId String @db.ObjectId\n  author   User   @relation(\"UserCourses\", fields: [authorId], references: [id])\n\n  lessons Lesson[]\n  savedBy SavedCourse[]\n  shareId String        @unique\n}\n\nmodel Lesson {\n  id String @id @default(auto()) @map(\"_id\") @db.ObjectId\n\n  title       String\n  videoId     String // YouTube video ID\n  description String?\n  thumbnail   String?\n  embedUrl    String\n  duration    Int? // in seconds\n  order       Int\n\n  courseId String @db.ObjectId\n  course   Course @relation(fields: [courseId], references: [id])\n\n  createdAt DateTime @default(now())\n}\n\nmodel SavedCourse {\n  id       String   @id @default(auto()) @map(\"_id\") @db.ObjectId\n  userId   String   @db.ObjectId\n  courseId String   @db.ObjectId\n  savedAt  DateTime @default(now())\n\n  user   User   @relation(fields: [userId], references: [id])\n  course Course @relation(fields: [courseId], references: [id])\n\n  @@unique([userId, courseId])\n}\n",
+  "inlineSchemaHash": "07533bbdc1780e2ee30b6c0493b2990e00e069054f912dddd367a4aadc85b832",
   "copyEngine": true,
   "runtimeDataModel": {
     "models": {},

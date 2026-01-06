@@ -18,6 +18,7 @@ import EditCourseModal from "./EditCourse";
 import { Course, Lesson } from "@/types";
 import ShareCourseModal from "./ShareCourse";
 import AddLecture from "./AddLecture";
+import { useSession } from "next-auth/react";
 
 interface CourseLecturePageProps {
   shareId: string;
@@ -37,6 +38,8 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+
+  const session = useSession();
 
   useEffect(() => {
     if (!shareId) return;
@@ -226,13 +229,13 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
               <Share2 size={22} />
             </IconButton>
 
-            <IconButton label="Edit" onClick={() => setOpen(true)}>
-              <Pencil size={22} />
-            </IconButton>
+            <IconButton label="Edit" onClick={() => setOpen(true)} className={`${session.data?.user?.id == course.authorId ? "" : "hidden"}`}>
+  <Pencil size={22} />
+</IconButton>
 
-            <IconButton label="Delete" danger onClick={handleDeleteCourse}>
-              <Trash2 size={22} />
-            </IconButton>
+<IconButton label="Delete" danger onClick={handleDeleteCourse} className={`${session.data?.user?.id == course.authorId ? "" : "hidden"}`}>
+  <Trash2 size={22} />
+</IconButton>
           </div>
         </div>
 
@@ -264,7 +267,7 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
               )}
 
               {/* Cinema Mode Button */}
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={() => setCinema(!cinema)}
                   className="bg-white/80 dark:bg-black/70 
@@ -296,7 +299,7 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
             )}
           </div>
 
-          {/* LECTURES SIDEBAR - Card Style like Dashboard */}
+          {/* LECTURES SIDEBAR */}
           <div
             className="space-y-4 
                 bg-zinc-50 dark:bg-transparent
@@ -306,7 +309,7 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
               <h3 className="text-lg font-medium">
                 Lectures ({course.lessons.length})
               </h3>
-              <button className="group hover:bg-zinc-800 p-2 rounded-lg transition hover:text-white"
+              <button className={`group hover:bg-zinc-800 p-2 rounded-lg transition hover:text-white ${session.data?.user?.id == course.authorId ? "" : "hidden"}`}
               onClick={() => setAddOpen(true)}
               >
                 <Plus size={20} />
@@ -364,13 +367,13 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
                               openLessonMenu === lesson.id ? null : lesson.id
                             );
                           }}
-                          className="p-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                          className={`p-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 ${session.data?.user?.id == course.authorId ? "" : "hidden"}`}
                         >
                           <MoreVertical size={16} />
                         </button>
 
                         {openLessonMenu === lesson.id && (
-                          <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50">
+                          <div className={`absolute right-0 mt-2 w-32 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 ${session.data?.user?.id == course.authorId ? "" : "hidden"}`}>
                             {/* <MenuItem
                               label="Edit"
                               onClick={() => toast("Edit lecture")}
@@ -400,7 +403,7 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
             prev
               ? {
                   ...prev,
-                  ...updatedCourse, // updates title, description, etc
+                  ...updatedCourse,
                 }
               : prev
           );
@@ -526,11 +529,13 @@ export function IconButton({
   onClick,
   label,
   danger = false,
+  className = "",
 }: {
   children: React.ReactNode;
   onClick: () => void;
   label: string;
   danger?: boolean;
+  className?: string;
 }) {
   return (
     <button
@@ -540,7 +545,7 @@ export function IconButton({
         danger
           ? "text-red-500 hover:bg-red-500/10"
           : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-      }`}
+      } ${className}`}
     >
       {children}
     </button>

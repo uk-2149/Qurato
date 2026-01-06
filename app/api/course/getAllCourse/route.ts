@@ -53,6 +53,7 @@ export async function GET() {
       shareId: course.shareId,
       source: course.source,
       playListId: course.playlistId,
+      authorId: course.authorId,
     }));
 
     return NextResponse.json({ courses: formatted });

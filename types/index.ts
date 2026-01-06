@@ -8,6 +8,7 @@ export type Course = {
   shareId: string;
   source: "youtube" | "custom"
   playlistId?: string;
+  authorId: string;
 };
 
 export type Lesson = {

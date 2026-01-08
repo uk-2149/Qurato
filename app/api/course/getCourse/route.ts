@@ -2,14 +2,12 @@ import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 
 // GET /api/course/getCourse?sId=abc123
 
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-
     const { searchParams } = new URL(req.url);
     const shareId = searchParams.get("sId");
 
@@ -20,29 +18,19 @@ export async function GET(req: Request) {
       );
     }
 
-    // Build the include object conditionally
-    const includeConfig: Prisma.CourseInclude = {
-      lessons: {
-        orderBy: { order: "asc" },
-      },
-      author: {
-        select: {
-          name: true,
-        },
-      },
-    };
-
-    // Only add savedBy if user is authenticated
-    if (session?.user?.id) {
-      includeConfig.savedBy = {
-        where: { userId: session.user.id },
-        select: { id: true },
-      };
-    }
-
     const course = await prisma.course.findUnique({
       where: { shareId },
-      include: includeConfig,
+      include: {
+        lessons: {
+          orderBy: { order: "asc" },
+        },
+        author: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!course) {
@@ -52,10 +40,18 @@ export async function GET(req: Request) {
       );
     }
 
-    // Check if saved (handle both authenticated and unauthenticated cases)
-    const isSaved = session?.user?.id 
-      ? (course.savedBy && course.savedBy.length > 0)
-      : false;
+    let isSaved = false;
+    if (session?.user?.id) {
+      const savedCourse = await prisma.savedCourse.findUnique({
+        where: {
+          userId_courseId: {
+            userId: session.user.id,
+            courseId: course.id,
+          },
+        },
+      });
+      isSaved = !!savedCourse;
+    }
 
     return NextResponse.json({
       ...course,
@@ -64,7 +60,10 @@ export async function GET(req: Request) {
   } catch (err) {
     console.error("Error in getCourse:", err);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: "Internal server error",
+        message: err instanceof Error ? err.message : String(err),
+      },
       { status: 500 }
     );
   }

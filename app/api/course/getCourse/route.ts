@@ -35,7 +35,7 @@ export async function GET(req: Request) {
             where: { userId: session.user.id },
             select: { id: true },
           }
-          : false,
+          : undefined,
       },
     });
 

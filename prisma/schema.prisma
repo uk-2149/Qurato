@@ -18,6 +18,8 @@ model User {
 
   courses   Course[] @relation("UserCourses")
   saved     SavedCourse[]
+
+  progress  UserProgress[]
 }
 
 model Course {
@@ -40,6 +42,8 @@ model Course {
   lessons       Lesson[]
   savedBy       SavedCourse[]
   shareId       String     @unique
+
+  progress  UserProgress[]
 
 }
 
@@ -71,3 +75,20 @@ model SavedCourse {
 
   @@unique([userId, courseId])
 }
+
+model UserProgress {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  courseId  String   @db.ObjectId
+
+  completedLessons String[] // store lesson IDs
+  currentLessonId  String?  // which lesson he last watched
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+}
+

@@ -401,7 +401,7 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
           >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-medium">
-                Lectures ({course.lessons.length})
+                Lectures ({course.lessons?.length ?? 0})
               </h3>
               <button
                 className={`group hover:bg-zinc-800 p-2 rounded-lg transition hover:text-white ${
@@ -413,7 +413,7 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
               </button>
             </div>
 
-            {course.lessons?.length === 0 ? (
+            {(course.lessons?.length ?? 0) === 0 ? (
               <div className="text-center py-12 text-zinc-500">
                 No lectures yet. Click + to add one.
               </div>

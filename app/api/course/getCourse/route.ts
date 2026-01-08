@@ -2,6 +2,7 @@ import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 
 // GET /api/course/getCourse?sId=abc123
 
@@ -19,24 +20,29 @@ export async function GET(req: Request) {
       );
     }
 
+    // Build the include object conditionally
+    const includeConfig: Prisma.CourseInclude = {
+      lessons: {
+        orderBy: { order: "asc" },
+      },
+      author: {
+        select: {
+          name: true,
+        },
+      },
+    };
+
+    // Only add savedBy if user is authenticated
+    if (session?.user?.id) {
+      includeConfig.savedBy = {
+        where: { userId: session.user.id },
+        select: { id: true },
+      };
+    }
+
     const course = await prisma.course.findUnique({
       where: { shareId },
-      include: {
-        lessons: {
-          orderBy: { order: "asc" },
-        },
-        author: {
-          select: {
-            name: true,
-          },
-        },
-        savedBy: session?.user?.id
-          ? {
-            where: { userId: session.user.id },
-            select: { id: true },
-          }
-          : undefined,
-      },
+      include: includeConfig,
     });
 
     if (!course) {
@@ -46,12 +52,17 @@ export async function GET(req: Request) {
       );
     }
 
+    // Check if saved (handle both authenticated and unauthenticated cases)
+    const isSaved = session?.user?.id 
+      ? (course.savedBy && course.savedBy.length > 0)
+      : false;
+
     return NextResponse.json({
       ...course,
-      isSaved: course.savedBy?.length > 0,
+      isSaved,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error in getCourse:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

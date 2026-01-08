@@ -2,11 +2,19 @@
 
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function LoginPage() {
+interface LoginProps {
+  callbackUrl?: string;
+}
+
+export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    console.log("Callback url:", callbackUrl);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -16,7 +24,7 @@ export default function LoginPage() {
         redirect: true,
         email,
         password,
-        callbackUrl: "/dashboard",
+        callbackUrl: callbackUrl,
         });
 
         if (res?.error) {
@@ -30,7 +38,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogIn = () => {
-    signIn("google", { callbackUrl: "/" });
+    signIn("google", { callbackUrl: callbackUrl });
   }
 
   return (
@@ -103,7 +111,7 @@ export default function LoginPage() {
         <p className="text-center text-zinc-400 text-sm mt-6">
           Don’t have an account?{" "}
           <Link
-            href="/register"
+            href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
             className="text-indigo-400 hover:underline"
           >
             Create one

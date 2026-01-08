@@ -1,13 +1,17 @@
-import Public from '@/components/auth/Public'
-import LoginPage from '@/components/Login'
-import React from 'react'
+import Public from "@/components/auth/Public";
+import LoginPage from "@/components/Login";
 
-function page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const params = await searchParams;
+  const callbackUrl = params.callbackUrl || "/dashboard";
+
   return (
     <Public>
-        <LoginPage />
+      <LoginPage callbackUrl={callbackUrl} />
     </Public>
-  )
+  );
 }
-
-export default page

@@ -8,6 +8,7 @@ import CreateCourseModal from "./CreateCourse";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Course } from "@/types";
+import { useSession } from "next-auth/react";
 
 interface NavBarProps {
   otherPage: boolean;
@@ -17,6 +18,8 @@ interface NavBarProps {
 function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
   //   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [open, setOpen] = useState(false);
+
+  const session = useSession();
 
   return (
     <>
@@ -59,7 +62,8 @@ function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
 
             {/* Desktop Navigation */}
             <div className="flex items-center gap-8">
-              <div className="md:flex items-center gap-6 hidden">
+              {session?.data?.user && (
+                <div className="md:flex items-center gap-6 hidden">
                 <motion.button
                   onClick={() => setOpen(true)}
                   initial={{ opacity: 0, y: -10 }}
@@ -75,6 +79,7 @@ function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
                   />
                 </motion.button>
               </div>
+              )}
 
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}

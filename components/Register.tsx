@@ -4,7 +4,11 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
 
-export default function RegisterPage() {
+interface RegisterProps {
+  callbackUrl?: string;
+}
+
+export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,15 +38,13 @@ export default function RegisterPage() {
         redirect: true,
         email,
         password,
-        callbackUrl: "/",
+        callbackUrl: callbackUrl,
         });
 
         if (result?.error) {
             alert(`Error in login`);
             console.log("Error: ", result?.error);
-        } else {
-            setTimeout(() => (window.location.href = "/"), 100);
-        }
+        } 
     } catch (error) {
       console.log(error);
       alert("An unexpected error occurred");

@@ -3,15 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 
-export async function POST(req: Request) {
+export async function DELETE(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { courseId } = body;
+    const { searchParams } = new URL(req.url);
+    const courseId = searchParams.get("courseId");
 
     if (!courseId) {
       return NextResponse.json(
@@ -28,24 +28,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    await prisma.savedCourse.upsert({
-      where: {
+    await prisma.savedCourse.delete({
+    where: {
         userId_courseId: {
-          userId: session.user.id,
-          courseId,
+            userId: session.user.id,
+            courseId,
         },
-      },
-      update: {},
-      create: {
-        userId: session.user.id,
-        courseId,
-      },
+    },
     });
 
-    return NextResponse.json(
-      { message: "Course saved successfully" },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Save course error:", error);
     return NextResponse.json(

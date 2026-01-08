@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import EditCourse from "./EditCourse";
 import { Share2 } from "lucide-react";
@@ -218,15 +218,29 @@ function CourseGrid({
   setSelectedCourse: (course: Course | undefined) => void;
   setShareOpen: (open: boolean) => void;
 }) {
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {courses.map((course) => (
         <Link
           key={course.id}
           href={`/course/${course.shareId}`}
-          className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-gray-100 dark:bg-zinc-900 hover:shadow-lg transition overflow-hidden"
+          className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-gray-100 dark:bg-zinc-900 hover:shadow-lg transition"
         >
-          <div className="relative h-45 bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+          <div className="relative h-45 bg-zinc-100 dark:bg-zinc-800 overflow-hidden rounded-t-xl">
             {course.thumbnail ? (
               <Image
                 src={course.thumbnail}
@@ -247,7 +261,7 @@ function CourseGrid({
                 {course.title}
               </h3>
 
-              <div className="relative">
+              <div className="relative" ref={menuRef}>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -261,7 +275,9 @@ function CourseGrid({
                 </button>
 
                 {openMenuId === course.id && (
-                  <div className="absolute right-0 mt-2 w-32 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-lg z-20">
+                  <div
+                    className="absolute right-0 mt-2 w-32 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-lg z-20"
+                  >
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -291,7 +307,8 @@ function CourseGrid({
                         setOpenMenuId(null);
                         setShareOpen(true);
                       }}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    >
                       Share
                     </button>
                   </div>

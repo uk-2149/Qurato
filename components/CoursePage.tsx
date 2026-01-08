@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   MoreVertical,
   Plus,
@@ -9,11 +9,13 @@ import {
   Share2,
   Pencil,
   Trash2,
+  Bookmark,
+  BookmarkCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import NavBar from "./NavBar";
 import Image from "next/image";
-import { redirect } from "next/navigation";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
 import EditCourseModal from "./EditCourse";
 import { Course, Lesson } from "@/types";
 import ShareCourseModal from "./ShareCourse";
@@ -26,6 +28,7 @@ interface CourseLecturePageProps {
 
 type CourseWithLessons = Course & {
   lessons: Lesson[];
+  isSaved?: boolean;
 };
 
 export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
@@ -38,6 +41,11 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const session = useSession();
 
@@ -61,6 +69,32 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
 
     fetchCourse();
   }, [shareId]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenLessonMenu(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+  if (!course) return;
+
+  const shouldSave = searchParams.get("save");
+
+  if (shouldSave === "1" && session.status === "authenticated") {
+    handleSaveCourse();
+
+    router.replace(`/course/${shareId}`, { scroll: false });
+  }
+}, [session.status, course]);
+
 
   function toBaseCourse(course: CourseWithLessons): Course {
     const { lessons, ...baseCourse } = course;
@@ -95,7 +129,7 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
     }
   };
 
-    const handleDeleteLesson = async (courseId: string, lessonId: string) => {
+  const handleDeleteLesson = async (courseId: string, lessonId: string) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this lesson? This action cannot be undone."
     );
@@ -103,9 +137,12 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/lecture/delete?lessonId=${lessonId}&courseId=${courseId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/lecture/delete?lessonId=${lessonId}&courseId=${courseId}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Failed to delete course");
@@ -113,19 +150,17 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
 
       const data = await res.json();
       setCourse((prev) =>
-  prev
-    ? {
-        ...prev,
-        lessons: prev.lessons.filter(
-          (lesson) => lesson.id !== lessonId
-        ),
-        totalVideos: Math.max(
-          (prev.totalVideos ?? prev.lessons.length) - 1,
-          0
-        ),
-      }
-    : prev
-);
+        prev
+          ? {
+              ...prev,
+              lessons: prev.lessons.filter((lesson) => lesson.id !== lessonId),
+              totalVideos: Math.max(
+                (prev.totalVideos ?? prev.lessons.length) - 1,
+                0
+              ),
+            }
+          : prev
+      );
       toast.success("The course has been removed successfully.");
     } catch (error) {
       console.error("Error occured while deleting:", error);
@@ -134,20 +169,19 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   };
 
   const handleLecturesAdded = (newLessons: Lesson[]) => {
-  setCourse((prev) =>
-    prev
-      ? {
-          ...prev,
-          lessons: [...prev.lessons, ...newLessons],
-        }
-      : prev
-  );
+    setCourse((prev) =>
+      prev
+        ? {
+            ...prev,
+            lessons: [...prev.lessons, ...newLessons],
+          }
+        : prev
+    );
 
-  if (!currentLesson && newLessons.length) {
-    setCurrentLesson(newLessons[0]);
-  }
-};
-
+    if (!currentLesson && newLessons.length) {
+      setCurrentLesson(newLessons[0]);
+    }
+  };
 
   function timestampToSeconds(ts: string) {
     const parts = ts.split(":").map(Number);
@@ -164,6 +198,46 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
 
     return 0;
   }
+
+  const handleSaveCourse = async () => {
+  if (!session.data) {
+    router.push(
+      `/login?callbackUrl=${encodeURIComponent(
+        `/course/${course?.shareId}?save=1`
+      )}`
+    );
+    return;
+  }
+
+  if (!course) return;
+
+  const prevState = course.isSaved;
+
+  // optimistic toggle
+  setCourse((prev) =>
+    prev ? { ...prev, isSaved: !prev.isSaved } : prev
+  );
+
+  try {
+    const endpoint = prevState ? "/api/course/unsave" : "/api/course/save";
+
+    const res = await fetch(`${endpoint}?courseId=${course.id}`, {
+      method: prevState ? "DELETE" : "POST",
+    });
+
+    if (!res.ok) throw new Error("Failed toggling save");
+
+    toast.success(prevState ? "Removed from saved" : "Saved course!");
+  } catch (err) {
+    // rollback
+    setCourse((prev) =>
+      prev ? { ...prev, isSaved: prevState } : prev
+    );
+    toast.error("Something went wrong");
+  }
+};
+
+
 
   function parseDescription(text: string, onSeek: (seconds: number) => void) {
     const regex = /(\b\d{1,2}:\d{2}(?::\d{2})?\b)|(https?:\/\/[^\s]+)/g;
@@ -222,20 +296,40 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
           </p>
 
           <div className="flex items-center gap-2">
-            <IconButton
-              label="Share"
-              onClick={() => setShareOpen(true)}
-            >
+            <IconButton label="Share" onClick={() => setShareOpen(true)}>
               <Share2 size={22} />
             </IconButton>
 
-            <IconButton label="Edit" onClick={() => setOpen(true)} className={`${session.data?.user?.id == course.authorId ? "" : "hidden"}`}>
-  <Pencil size={22} />
-</IconButton>
+            {session.data?.user?.id !== course.authorId && (
+              <IconButton label="Save" onClick={handleSaveCourse}>
+                {course.isSaved ? (
+                  <BookmarkCheck size={22} className="text-indigo-500" />
+                ) : (
+                  <Bookmark size={22} />
+                )}
+              </IconButton>
+            )}
 
-<IconButton label="Delete" danger onClick={handleDeleteCourse} className={`${session.data?.user?.id == course.authorId ? "" : "hidden"}`}>
-  <Trash2 size={22} />
-</IconButton>
+            <IconButton
+              label="Edit"
+              onClick={() => setOpen(true)}
+              className={`${
+                session.data?.user?.id == course.authorId ? "" : "hidden"
+              }`}
+            >
+              <Pencil size={22} />
+            </IconButton>
+
+            <IconButton
+              label="Delete"
+              danger
+              onClick={handleDeleteCourse}
+              className={`${
+                session.data?.user?.id == course.authorId ? "" : "hidden"
+              }`}
+            >
+              <Trash2 size={22} />
+            </IconButton>
           </div>
         </div>
 
@@ -309,8 +403,11 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
               <h3 className="text-lg font-medium">
                 Lectures ({course.lessons.length})
               </h3>
-              <button className={`group hover:bg-zinc-800 p-2 rounded-lg transition hover:text-white ${session.data?.user?.id == course.authorId ? "" : "hidden"}`}
-              onClick={() => setAddOpen(true)}
+              <button
+                className={`group hover:bg-zinc-800 p-2 rounded-lg transition hover:text-white ${
+                  session.data?.user?.id == course.authorId ? "" : "hidden"
+                }`}
+                onClick={() => setAddOpen(true)}
               >
                 <Plus size={20} />
               </button>
@@ -367,13 +464,24 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
                               openLessonMenu === lesson.id ? null : lesson.id
                             );
                           }}
-                          className={`p-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 ${session.data?.user?.id == course.authorId ? "" : "hidden"}`}
+                          className={`p-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 ${
+                            session.data?.user?.id == course.authorId
+                              ? ""
+                              : "hidden"
+                          }`}
                         >
                           <MoreVertical size={16} />
                         </button>
 
                         {openLessonMenu === lesson.id && (
-                          <div className={`absolute right-0 mt-2 w-32 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 ${session.data?.user?.id == course.authorId ? "" : "hidden"}`}>
+                          <div
+                            className={`absolute right-0 mt-2 w-32 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 ${
+                              session.data?.user?.id == course.authorId
+                                ? ""
+                                : "hidden"
+                            }`}
+                            ref={menuRef}
+                          >
                             {/* <MenuItem
                               label="Edit"
                               onClick={() => toast("Edit lecture")}
@@ -381,7 +489,9 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
                             <MenuItem
                               label="Delete"
                               danger
-                              onClick={() => handleDeleteLesson(course.id, lesson.id)}
+                              onClick={() =>
+                                handleDeleteLesson(course.id, lesson.id)
+                              }
                             />
                           </div>
                         )}
@@ -416,11 +526,11 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
         shareId={shareId}
       />
       <AddLecture
-  isOpen={addOpen}
-  onClose={() => setAddOpen(false)}
-  courseId={course.id}
-  onCreated={handleLecturesAdded}
-/>
+        isOpen={addOpen}
+        onClose={() => setAddOpen(false)}
+        courseId={course.id}
+        onCreated={handleLecturesAdded}
+      />
     </>
   );
 }

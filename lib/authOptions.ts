@@ -54,12 +54,44 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async signIn({ user, account }) {
+      // Handle Google OAuth - create user if doesn't exist
+      if (account?.provider === "google" && user.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        });
+
+        if (!existingUser) {
+          await prisma.user.create({
+            data: {
+              email: user.email,
+              name: user.name || "",
+              imageUrl: user.image || "",
+            },
+          });
+        }
+      }
+
+      return true;
+    },
+
+    async jwt({ token, user, trigger, account }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.imageUrl = user.imageUrl;
+      }
+
+      // Handle Google OAuth - ensure user exists in database
+      if (account?.provider === "google" && !user) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+        });
+
+        if (dbUser) {
+          token.id = dbUser.id;
+        }
       }
 
       if (trigger === "update" && token.id) {

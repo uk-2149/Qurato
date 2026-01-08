@@ -42,15 +42,25 @@ export async function GET(req: Request) {
 
     let isSaved = false;
     if (session?.user?.id) {
-      const savedCourse = await prisma.savedCourse.findUnique({
-        where: {
-          userId_courseId: {
-            userId: session.user.id,
-            courseId: course.id,
-          },
-        },
-      });
-      isSaved = !!savedCourse;
+      try {
+        // Validate that userId is a valid MongoDB ObjectId
+        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(session.user.id);
+        
+        if (isValidObjectId) {
+          const savedCourse = await prisma.savedCourse.findUnique({
+            where: {
+              userId_courseId: {
+                userId: session.user.id,
+                courseId: course.id,
+              },
+            },
+          });
+          isSaved = !!savedCourse;
+        }
+      } catch (error) {
+        // Silently fail if there's an issue checking saved status
+        console.warn("Error checking saved course status:", error);
+      }
     }
 
     return NextResponse.json({

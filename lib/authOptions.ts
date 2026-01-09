@@ -70,7 +70,7 @@ export const authOptions: NextAuthOptions = {
             },
           });
         }
-        
+
         // Ensure the user object has the database ID
         user.id = dbUser.id;
       }
@@ -79,7 +79,7 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user, trigger, account }) {
-      // For Credentials provider
+      // Initial sign in - set user data
       if (user && user.id) {
         token.id = user.id;
         token.email = user.email;
@@ -87,8 +87,12 @@ export const authOptions: NextAuthOptions = {
         token.imageUrl = user.imageUrl;
       }
 
-      // For Google OAuth - always fetch the database user ID
-      if (account?.provider === "google") {
+      // For Google OAuth or when token.id is not a valid MongoDB ObjectId
+      // Always fetch from database to ensure we have the correct MongoDB ID
+      if (
+        token.email &&
+        (!token.id || !/^[0-9a-fA-F]{24}$/.test(token.id as string))
+      ) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email as string },
         });
@@ -101,6 +105,7 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
+      // Handle updates
       if (trigger === "update" && token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
@@ -121,7 +126,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
         session.user.name = token.name as string;
-        session.user.image = token.image as string;
+        session.user.image =
+          (token.imageUrl as string) || (token.image as string);
       }
       return session;
     },

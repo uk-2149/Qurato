@@ -16,6 +16,7 @@ export async function GET() {
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
     
     if (!isValidObjectId) {
+      console.log("Invalid ObjectId format:", userId); // Debug log
       return NextResponse.json({ error: "Invalid user ID format" }, { status: 400 });
     }
 

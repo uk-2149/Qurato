@@ -43,34 +43,52 @@ export default function AddLecture({
   };
 
   const handleSubmit = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const res = await fetch("/api/lecture/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        courseId,
-        videoLinks: videoLinks.filter(Boolean),
-      }),
-    });
+      const res = await fetch("/api/lecture/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courseId,
+          videoLinks: videoLinks.filter(Boolean),
+        }),
+      });
 
-    const data = await res.json();
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to add lectures");
+      }
 
-    if (!res.ok) throw new Error(data.error);
+      const data = await res.json();
 
-    toast.success("Lectures added");
+      console.log("API Response:", data); // Debug log
 
-    onCreated?.(data.lessons);
-    resetForm();
-    onClose();
-  } catch (err) {
-    toast.error("Failed to add lectures");
-  } finally {
-    setLoading(false);
-  }
-};
+      // Ensure lessons is an array
+      const lessons = Array.isArray(data.lessons)
+        ? data.lessons
+        : data.lesson
+        ? [data.lesson]
+        : [];
 
+      if (lessons.length === 0) {
+        throw new Error("No lessons returned from API");
+      }
+
+      toast.success(`${lessons.length} lecture(s) added`);
+
+      onCreated?.(lessons);
+      resetForm();
+      onClose();
+    } catch (err) {
+      console.error("Add lecture error:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to add lectures"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">

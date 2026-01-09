@@ -183,16 +183,26 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   };
 
   const handleLecturesAdded = (newLessons: Lesson[]) => {
+    console.log("Received new lessons:", newLessons); // Debug log
+
+    if (!Array.isArray(newLessons)) {
+      console.error("newLessons is not an array:", newLessons);
+      toast.error("Invalid lesson data received");
+      return;
+    }
+
     setCourse((prev) =>
       prev
         ? {
             ...prev,
             lessons: [...prev.lessons, ...newLessons],
+            totalVideos:
+              (prev.totalVideos ?? prev.lessons.length) + newLessons.length,
           }
         : prev
     );
 
-    if (!currentLesson && newLessons.length) {
+    if (!currentLesson && newLessons.length > 0) {
       setCurrentLesson(newLessons[0]);
     }
   };

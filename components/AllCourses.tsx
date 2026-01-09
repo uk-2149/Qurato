@@ -229,11 +229,16 @@ function CourseGrid({
   setSelectedCourse: (course: Course | undefined) => void;
   setShareOpen: (open: boolean) => void;
 }) {
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      // Close menu if click is outside any menu
+      const isClickOnMenu = Object.values(menuRefs.current).some(
+        (ref) => ref && ref.contains(e.target as Node)
+      );
+      
+      if (!isClickOnMenu) {
         setOpenMenuId(null);
       }
     }
@@ -242,7 +247,7 @@ function CourseGrid({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [setOpenMenuId]);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {courses.map((course) => (
@@ -272,7 +277,9 @@ function CourseGrid({
                 {course.title}
               </h3>
 
-              <div className="relative" ref={menuRef}>
+              <div className="relative" ref={(el) => {
+                if (el) menuRefs.current[course.id] = el;
+              }}>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -316,6 +323,7 @@ function CourseGrid({
                         e.preventDefault();
                         e.stopPropagation();
                         setOpenMenuId(null);
+                        setSelectedCourse(course);
                         setShareOpen(true);
                       }}
                       className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"

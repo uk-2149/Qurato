@@ -59,7 +59,7 @@ model Lesson {
   order       Int
 
   courseId    String   @db.ObjectId
-  course      Course  @relation(fields: [courseId], references: [id])
+  course      Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now())
 }
@@ -71,7 +71,7 @@ model SavedCourse {
   savedAt   DateTime @default(now())
 
   user       User    @relation(fields: [userId], references: [id])
-  course     Course  @relation(fields: [courseId], references: [id])
+  course     Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
 }
@@ -87,7 +87,7 @@ model UserProgress {
   createdAt        DateTime @default(now())
 
   user   User   @relation(fields: [userId], references: [id])
-  course Course @relation(fields: [courseId], references: [id])
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
 }

@@ -87,43 +87,28 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   }, []);
 
   useEffect(() => {
-    if (!course) return;
+    if (!course || !course.lessons) return;
 
-    const shouldSave = searchParams.get("save");
-
-    if (shouldSave === "1" && session.status === "authenticated" && !savingRef.current) {
-      savingRef.current = true;
-
-      router.replace(`/course/${shareId}`, { scroll: false });
-
-      handleSaveCourse();
+    // If currentLesson is null, select first uncompleted lesson
+    if (!currentLesson) {
+      const next = course.lessons.find(
+        (l) => !course.completedLessons?.includes(l.id)
+      );
+      setCurrentLesson(next || course.lessons[0]);
+      return;
     }
-  }, [session.status, course?.id, shareId, searchParams, router]);
 
-  useEffect(() => {
-  if (!course || !course.lessons) return;
-
-  // If currentLesson is null, select first uncompleted lesson
-  if (!currentLesson) {
-    const next = course.lessons.find(
-      (l) => !course.completedLessons?.includes(l.id)
-    );
-    setCurrentLesson(next || course.lessons[0]);
-    return;
-  }
-
-  // If the selected lesson is completed → auto-play the next uncompleted
-  if (course.completedLessons?.includes(currentLesson.id)) {
-    const next = course.lessons.find(
-      (l) => !course.completedLessons?.includes(l.id)
-    );
-    if (next && next.id !== currentLesson.id) {
-      setCurrentLesson(next);
-      setStartAt(0);
+    // If the selected lesson is completed → auto-play the next uncompleted
+    if (course.completedLessons?.includes(currentLesson.id)) {
+      const next = course.lessons.find(
+        (l) => !course.completedLessons?.includes(l.id)
+      );
+      if (next && next.id !== currentLesson.id) {
+        setCurrentLesson(next);
+        setStartAt(0);
+      }
     }
-  }
-}, [course?.lessons]);
-
+  }, [course?.lessons]);
 
   function toBaseCourse(course: CourseWithLessons): Course {
     const { lessons, completedLessons, isSaved, ...baseCourse } = course;
@@ -228,55 +213,108 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
     return 0;
   }
 
+  // Separate effect for handling redirect-back-after-login
+  useEffect(() => {
+    if (!course) return;
+
+    const shouldSave = searchParams.get("save");
+
+    if (
+      shouldSave === "1" &&
+      session.status === "authenticated" &&
+      session.data
+    ) {
+      // Remove query param immediately
+      router.replace(`/course/${shareId}`, { scroll: false });
+
+      // Perform the save
+      const performSave = async () => {
+        const prevState = course.isSaved;
+
+        // Don't save if already saved
+        if (prevState) return;
+
+        setCourse((prev) => (prev ? { ...prev, isSaved: true } : prev));
+
+        try {
+          const res = await fetch(`/api/course/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ courseId: course.id }),
+          });
+
+          if (!res.ok) throw new Error("Failed to save");
+
+          toast.success("Saved course!");
+        } catch (err) {
+          console.error("Save error:", err);
+          setCourse((prev) => (prev ? { ...prev, isSaved: prevState } : prev));
+          toast.error("Something went wrong");
+        }
+      };
+
+      performSave();
+    }
+  }, [
+    session.status,
+    session.data,
+    course?.id,
+    course?.isSaved,
+    shareId,
+    searchParams,
+    router,
+  ]);
+
+  // Simplified handleSaveCourse for manual button clicks
   const handleSaveCourse = async () => {
-  if (!session.data) {
-    router.push(
-      `/login?callbackUrl=${encodeURIComponent(
-        `/course/${course?.shareId}?save=1`
-      )}`
-    );
-    return;
-  }
-
-  if (!course || savingRef.current) return;
-
-  savingRef.current = true;
-  const prevState = course.isSaved;
-
-  // optimistic toggle
-  setCourse((prev) => (prev ? { ...prev, isSaved: !prev.isSaved } : prev));
-
-  try {
-    let res;
-
-    if (prevState) {
-      // UNSAVE
-      res = await fetch(`/api/course/unsave?courseId=${course.id}`, {
-        method: "DELETE",
-      });
-    } else {
-      // SAVE
-      res = await fetch(`/api/course/save`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseId: course.id }),
-      });
+    if (!session.data) {
+      router.push(
+        `/login?callbackUrl=${encodeURIComponent(
+          `/course/${course?.shareId}?save=1`
+        )}`
+      );
+      return;
     }
 
-    if (!res.ok) throw new Error("Failed toggling save");
+    if (!course || savingRef.current) return;
 
-    toast.success(prevState ? "Removed from saved" : "Saved course!");
-  } catch (err) {
-    // rollback
-    setCourse((prev) => (prev ? { ...prev, isSaved: prevState } : prev));
-    toast.error("Something went wrong");
-  } finally {
-    setTimeout(() => {
-      savingRef.current = false;
-    }, 1000);
-  }
-};
+    savingRef.current = true;
+    const prevState = course.isSaved;
 
+    // optimistic toggle
+    setCourse((prev) => (prev ? { ...prev, isSaved: !prev.isSaved } : prev));
+
+    try {
+      let res;
+
+      if (prevState) {
+        // UNSAVE
+        res = await fetch(`/api/course/unsave?courseId=${course.id}`, {
+          method: "DELETE",
+        });
+      } else {
+        // SAVE
+        res = await fetch(`/api/course/save`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ courseId: course.id }),
+        });
+      }
+
+      if (!res.ok) throw new Error("Failed toggling save");
+
+      toast.success(prevState ? "Removed from saved" : "Saved course!");
+    } catch (err) {
+      console.error("Save error:", err);
+      // rollback
+      setCourse((prev) => (prev ? { ...prev, isSaved: prevState } : prev));
+      toast.error("Something went wrong");
+    } finally {
+      setTimeout(() => {
+        savingRef.current = false;
+      }, 500); // Reduced timeout
+    }
+  };
 
   const toggleComplete = async (lessonId: string) => {
     if (!session.data) {
@@ -467,28 +505,28 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
             {currentLesson && (
               <>
                 {/* PROGRESS ROW */}
-                  <div className="flex items-center justify-between my-4 px-2">
-                    {/* MARK COMPLETE BUTTON */}
-                    <button
-                      onClick={() => toggleComplete(currentLesson.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition 
+                <div className="flex items-center justify-between my-4 px-2">
+                  {/* MARK COMPLETE BUTTON */}
+                  <button
+                    onClick={() => toggleComplete(currentLesson.id)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition 
       ${
         course.completedLessons?.includes(currentLesson.id)
           ? "bg-green-600 text-white hover:bg-green-700"
           : "bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700"
       }`}
-                    >
-                      {course.completedLessons?.includes(currentLesson.id)
-                        ? "✓ Completed"
-                        : "Mark as Complete"}
-                    </button>
+                  >
+                    {course.completedLessons?.includes(currentLesson.id)
+                      ? "✓ Completed"
+                      : "Mark as Complete"}
+                  </button>
 
-                    {/* PROGRESS COUNT */}
-                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {course.completedLessons?.length || 0} /{" "}
-                      {course.totalVideos} completed
-                    </span>
-                  </div>
+                  {/* PROGRESS COUNT */}
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                    {course.completedLessons?.length || 0} /{" "}
+                    {course.totalVideos} completed
+                  </span>
+                </div>
               </>
             )}
 

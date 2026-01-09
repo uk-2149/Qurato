@@ -16,7 +16,7 @@ export default function LandingPage() {
     {
       number: '1',
       title: 'Find a YouTube Playlist',
-      desc: 'Discover any educational playlist on YouTube that you want to learn from seriously.',
+      desc: 'Discover any playlist on YouTube that you want to learn from seriously.',
       icon: '🔍',
     },
     {
@@ -28,13 +28,13 @@ export default function LandingPage() {
     {
       number: '3',
       title: 'Learn Distraction-Free',
-      desc: 'Watch videos in our clean player — no ads, no recommendations, no comments.',
+      desc: 'Watch videos in our clean player - no ads, no recommendations, no comments.',
       icon: '🎯',
     },
     {
       number: '4',
       title: 'Track Your Progress',
-      desc: 'Mark lectures complete, see percentages, and resume exactly where you left off.',
+      desc: 'Mark lectures complete, see percentages and resume exactly where you left off.',
       icon: '📊',
     },
   ];
@@ -185,7 +185,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-gray-800">
         <div className="max-w-7xl mx-auto text-center text-gray-500">
-          <p>© 2026 Qurato. Focused learning for the modern student.</p>
+          <p>© 2026 Qurato. Focused learning for the conquerers.</p>
         </div>
       </footer>
     </>

@@ -181,7 +181,7 @@ export default function CreateCourseModal({
               <input
                 value={playListLink}
                 onChange={(e) => setplayListLink(e.target.value)}
-                placeholder="PLxxxxxx"
+                placeholder="https://www.youtube.com/playlist?list=PLxxxxxx......"
                 className="w-full mt-1 px-4 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700"
               />
             </div>

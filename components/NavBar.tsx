@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { ModeToggle } from "./ModeToggle";
-import { LogOut, Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { LogOut, X } from "lucide-react";
+import { motion } from "framer-motion";
 import CreateCourseModal from "./CreateCourse";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Course } from "@/types";
 import { signOut, useSession } from "next-auth/react";
@@ -53,14 +52,19 @@ function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
         >
           <div className="px-6 py-4 flex items-center justify-between">
             {/* Logo */}
-            <motion.h1
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-2xl md:text-3xl font-bold bg-linear-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent"
-            >
-              Qurato
-            </motion.h1>
+            <div className="flex items-center justify-center gap-2">
+              <motion.h1
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                className="text-2xl md:text-3xl font-bold bg-linear-to-br from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-500 bg-clip-text text-transparent"
+              >
+                Qurato
+              </motion.h1>
+              <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700 dark:bg-purple-700/20 dark:text-purple-300 border border-purple-200 dark:border-purple-700/40 translate-y-0.5">
+                v1.0
+              </span>
+            </div>
 
             {/* Desktop Navigation */}
             <div className="flex items-center gap-8">
@@ -71,12 +75,12 @@ function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.1 }}
-                    className="relative px-4 py-2 rounded-lg font-medium transition-all duration-300 text-zinc-900 dark:text-white bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-900 hover:cursor-pointer"
+                    className="relative px-4 py-2 rounded-lg font-medium transition-all duration-300 text-zinc-900 dark:text-white bg-indigo-100 dark:bg-indigo-900/30 hover:bg-purple-200 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-900 hover:cursor-pointer"
                   >
                     Create +
                     <motion.div
                       layoutId="highlight"
-                      className="absolute inset-0 bg-linear-to-r from-purple-500/20 to-pink-500/20 rounded-lg -z-10"
+                      className="absolute inset-0 bg-linear-to-r from-indigo-500/20 to-indigo-500/20 rounded-lg -z-10"
                       transition={{
                         type: "spring",
                         stiffness: 300,

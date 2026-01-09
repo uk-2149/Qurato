@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import EditCourse from "./EditCourse";
-import { Share2 } from "lucide-react";
 import ShareCourseModal from "./ShareCourse";
 
 type Course = {

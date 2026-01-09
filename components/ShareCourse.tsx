@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { X, Check, Copy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 

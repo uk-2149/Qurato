@@ -45,6 +45,7 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   const [descOpen, setDescOpen] = useState(false);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const savingRef = useRef(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -85,17 +86,20 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
     };
   }, []);
 
+  savingRef.current = false;
+
   useEffect(() => {
     if (!course) return;
 
     const shouldSave = searchParams.get("save");
 
-    if (shouldSave === "1" && session.status === "authenticated") {
+    if (shouldSave === "1" && session.status === "authenticated" && !savingRef.current) {
+      savingRef.current = true;
       handleSaveCourse();
 
       router.replace(`/course/${shareId}`, { scroll: false });
     }
-  }, [session.status, course]);
+  }, [session.status, course, shareId, searchParams, router]);
 
   useEffect(() => {
   if (!course || !course.lessons) return;

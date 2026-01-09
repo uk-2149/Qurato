@@ -1,36 +1,192 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# **Qurato — Learn Without Distractions**
 
-## Getting Started
+Qurato transforms any YouTube playlist into a clean, structured, distraction-free course.
+If you’ve ever opened YouTube to learn something and ended up lost in recommendations… Qurato fixes that.
 
-First, run the development server:
+Turn playlists into courses, track your progress, and stay focused — **all in one place.**
+
+---
+
+## 🚀 **Features**
+
+### **📌 Convert YouTube Playlists into Courses**
+
+Paste either:
+* A YouTube playlist link
+or
+* One or more individual YouTube video links
+
+Qurato will:
+* Extracts all videos
+* Organizes them into lessons
+* Removes all YouTube distractions
+* Gives you a minimal learning interface
+  
+### **🎯 Track Your Learning Progress**
+
+* Mark lessons as completed
+* Auto-start the next incomplete lesson
+* See your completion percentage on the dashboard
+
+### **💾 Save & Manage Courses**
+
+* Save any course
+* Quickly access created or saved courses
+* Edit course title/description
+* Delete or manage lessons easily
+
+### **🔗 Share Courses**
+
+Every course gets a unique public share link — share your playlists as clean learning paths.
+
+### **🌗 Modern UI + Dark/Light Mode**
+
+A sleek, minimal interface built for productivity:
+
+* Beautiful modern design
+* Intuitive UX
+* Fully responsive
+* Smooth animations
+* Dark/light mode support
+
+---
+
+## 🧩 **Tech Stack**
+
+### **Frontend**
+
+* **Next.js 14 (App Router)**
+* **React + TypeScript**
+* **Tailwind CSS**
+* **Framer Motion** (animations)
+* **NextAuth.js** (auth)
+
+### **Backend**
+
+* **Next.js Route Handlers**
+* **Prisma ORM**
+* **MongoDB**
+
+### **Other**
+
+* **ShadCN UI components**
+* **Vercel** (hosting)
+* **YouTube API** parsing + custom extraction
+
+---
+
+## 📦 **Installation & Setup**
+
+Clone the repo:
+
+```bash
+git clone https://github.com/yourusername/qurato.git
+cd qurato
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create a `.env` file:
+
+```
+DATABASE_URL=your_mongodb_connection_string
+NEXTAUTH_SECRET=your_secret
+NEXTAUTH_URL=http://localhost:3000
+
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+Run the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open **[http://localhost:3000](http://localhost:3000)**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ **Core Workflow**
 
-## Learn More
+### **Creating a Course**
 
-To learn more about Next.js, take a look at the following resources:
+1. Click **Create +**
+2. Paste a YouTube playlist link
+3. Qurato auto-generates:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   * Course title
+   * Thumbnail
+   * All lessons
+4. You can edit, delete, or reorder lessons.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### **Learning**
 
-## Deploy on Vercel
+* Open any lesson
+* Watch in a clean distraction-free player
+* Mark completed
+* Autoplay moves to the next incomplete lesson
+* Track full course progress
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📁 **Project Structure**
+
+```
+/app
+  ├── (routes)
+  ├── api
+  │   ├── course
+  │   ├── lecture
+  │   └── auth
+/components
+/lib
+/prisma
+/public
+/types
+```
+
+---
+
+## 🧪 **Production Ready**
+
+* Optimistic UI updates
+* Error handling on all endpoints
+* 100% mobile-first
+* Server actions + caching
+* Secure auth
+* Scalable prisma models
+
+---
+
+## 🔮 **Upcoming Features**
+
+* Notes inside lessons
+* Daily streaks
+* Course recommendation engine
+* Export progress
+* Upload custom videos
+
+---
+
+## 🤝 **Contribute**
+
+PRs are welcome!
+If you’d like to contribute, just open an issue or create a pull request.
+
+---
+
+## ⭐ **Support the Project**
+
+If you like Qurato, consider starring the repo — it helps a lot!
+
+---
+
+## 👨‍💻 **Made by Utkal**
+
+Built with love, focus, and a desire to learn without noise.
+

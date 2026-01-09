@@ -86,8 +86,6 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
     };
   }, []);
 
-  savingRef.current = false;
-
   useEffect(() => {
     if (!course) return;
 
@@ -95,11 +93,12 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
 
     if (shouldSave === "1" && session.status === "authenticated" && !savingRef.current) {
       savingRef.current = true;
-      handleSaveCourse();
 
       router.replace(`/course/${shareId}`, { scroll: false });
+
+      handleSaveCourse();
     }
-  }, [session.status, course, shareId, searchParams, router]);
+  }, [session.status, course?.id, shareId, searchParams, router]);
 
   useEffect(() => {
   if (!course || !course.lessons) return;
@@ -239,8 +238,9 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
     return;
   }
 
-  if (!course) return;
+  if (!course || savingRef.current) return;
 
+  savingRef.current = true;
   const prevState = course.isSaved;
 
   // optimistic toggle
@@ -270,6 +270,10 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
     // rollback
     setCourse((prev) => (prev ? { ...prev, isSaved: prevState } : prev));
     toast.error("Something went wrong");
+  } finally {
+    setTimeout(() => {
+      savingRef.current = false;
+    }, 1000);
   }
 };
 

@@ -3,7 +3,9 @@ export type Course = {
   title: string;
   description?: string;
   thumbnail?: string;
-  totalVideos?: number;
+  totalVideos: number;
+  completedLessons: number;
+  percentage: number;
   type: "created" | "saved";
   shareId: string;
   source: "youtube" | "custom"

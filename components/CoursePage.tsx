@@ -26,9 +26,10 @@ interface CourseLecturePageProps {
   shareId: string;
 }
 
-type CourseWithLessons = Course & {
+type CourseWithLessons = Omit<Course, 'completedLessons'> & {
   lessons: Lesson[];
   isSaved?: boolean;
+  completedLessons?: string[];
 };
 
 export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
@@ -97,8 +98,8 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
 
 
   function toBaseCourse(course: CourseWithLessons): Course {
-    const { lessons, ...baseCourse } = course;
-    return baseCourse;
+    const { lessons, completedLessons, isSaved, ...baseCourse } = course;
+    return baseCourse as Course;
   }
 
   const handleDeleteCourse = async () => {
@@ -237,6 +238,52 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   }
 };
 
+const toggleComplete = async (lessonId: string) => {
+  if (!session.data) {
+    router.push(`/login?callbackUrl=${encodeURIComponent(`/course/${course?.shareId}`)}`);
+    return;
+  }
+
+  if (!course) return;
+
+  const isCompleted = course.completedLessons?.includes(lessonId);
+
+  const prevList = course.completedLessons || [];
+
+  // optimistic UI update
+  setCourse((prev) =>
+    prev
+      ? {
+          ...prev,
+          completedLessons: isCompleted
+            ? prevList.filter((id) => id !== lessonId)
+            : [...prevList, lessonId],
+        }
+      : prev
+  );
+
+  try {
+    await fetch("/api/lecture/toggleComplete", {
+      method: "POST",
+      body: JSON.stringify({
+        lectureId: lessonId,
+        courseId: course.id,
+      }),
+    });
+  } catch (err) {
+    // rollback
+    setCourse((prev) =>
+      prev
+        ? {
+            ...prev,
+            completedLessons: prevList,
+          }
+        : prev
+    );
+
+    toast.error("Failed to update progress");
+  }
+};
 
 
   function parseDescription(text: string, onSeek: (seconds: number) => void) {
@@ -455,47 +502,78 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
                         </p>
                       </div>
 
-                      {/* MENU */}
-                      <div className="relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenLessonMenu(
-                              openLessonMenu === lesson.id ? null : lesson.id
-                            );
-                          }}
-                          className={`p-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 ${
-                            session.data?.user?.id == course.authorId
-                              ? ""
-                              : "hidden"
-                          }`}
-                        >
-                          <MoreVertical size={16} />
-                        </button>
+                     
 
-                        {openLessonMenu === lesson.id && (
-                          <div
-                            className={`absolute right-0 mt-2 w-32 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 ${
-                              session.data?.user?.id == course.authorId
-                                ? ""
-                                : "hidden"
-                            }`}
-                            ref={menuRef}
-                          >
-                            {/* <MenuItem
-                              label="Edit"
-                              onClick={() => toast("Edit lecture")}
-                            /> */}
-                            <MenuItem
-                              label="Delete"
-                              danger
-                              onClick={() =>
-                                handleDeleteLesson(course.id, lesson.id)
-                              }
-                            />
-                          </div>
-                        )}
-                      </div>
+                        {/* RIGHT ACTIONS */}
+<div className="flex items-center gap-2 relative">
+
+  {/* COMPLETION TOGGLE */}
+  {session.data?.user?.id && (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleComplete(lesson.id);
+      }}
+      className={`w-6 h-6 rounded-full flex items-center justify-center transition 
+      ${
+        course.completedLessons?.includes(lesson.id)
+          ? "bg-gradient-to-br from-purple-500 to-indigo-500 text-white shadow-lg"
+          : "border border-zinc-400 dark:border-zinc-600 text-zinc-400 hover:text-purple-500 hover:border-purple-500"
+      }`}
+    >
+      {course.completedLessons?.includes(lesson.id) ? (
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="white"
+          strokeWidth={2.5}
+          viewBox="0 0 24 24"
+        >
+          <path d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg
+          className="w-4 h-4 opacity-60"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.2}
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      )}
+    </button>
+  )}
+
+  {/* 3-DOT MENU */}
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      setOpenLessonMenu(
+        openLessonMenu === lesson.id ? null : lesson.id
+      );
+    }}
+    className={`p-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 ${
+      session.data?.user?.id == course.authorId ? "" : "hidden"
+    }`}
+  >
+    <MoreVertical size={16} />
+  </button>
+
+  {openLessonMenu === lesson.id && (
+    <div
+      className="absolute right-0 mt-2 w-32 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50"
+      ref={menuRef}
+    >
+      <MenuItem
+        label="Delete"
+        danger
+        onClick={() => handleDeleteLesson(course.id, lesson.id)}
+      />
+    </div>
+  )}
+</div>
+                     
                     </div>
                   );
                 })}
@@ -514,6 +592,8 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
               ? {
                   ...prev,
                   ...updatedCourse,
+                  lessons: prev.lessons,
+                  completedLessons: prev.completedLessons,
                 }
               : prev
           );

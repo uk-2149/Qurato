@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-// GET /api/course/getCourse?sId=abc123
-
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,6 +16,7 @@ export async function GET(req: Request) {
       );
     }
 
+    // Fetch course with lessons
     const course = await prisma.course.findUnique({
       where: { shareId },
       include: {
@@ -34,43 +33,74 @@ export async function GET(req: Request) {
     });
 
     if (!course) {
-      return NextResponse.json(
-        { error: "Course not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
     let isSaved = false;
+    let progressData: {
+      completedLessons: string[];
+      currentLessonId: string | null;
+    } = {
+      completedLessons: [],
+      currentLessonId: null,
+    };
+
+    // Check if logged in
     if (session?.user?.id) {
-      try {
-        // Validate that userId is a valid MongoDB ObjectId
-        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(session.user.id);
-        
-        if (isValidObjectId) {
+      const userId = session.user.id;
+
+      // Ensure valid ObjectId
+      const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
+
+      if (isValidObjectId) {
+        // Check Saved Status
+        try {
           const savedCourse = await prisma.savedCourse.findUnique({
             where: {
               userId_courseId: {
-                userId: session.user.id,
+                userId,
                 courseId: course.id,
               },
             },
           });
+
           isSaved = !!savedCourse;
+        } catch (err) {
+          console.warn("Error checking saved:", err);
         }
-      } catch (error) {
-        // Silently fail if there's an issue checking saved status
-        console.warn("Error checking saved course status:", error);
+
+        // Check Progress
+        try {
+          const progress = await prisma.userProgress.findUnique({
+            where: {
+              userId_courseId: {
+                userId,
+                courseId: course.id,
+              },
+            },
+          });
+
+          if (progress) {
+            progressData = {
+              completedLessons: progress.completedLessons ?? [],
+              currentLessonId: progress.currentLessonId ?? null,
+            };
+          }
+        } catch (err) {
+          console.warn("Error fetching progress:", err);
+        }
       }
     }
 
     return NextResponse.json({
       ...course,
       isSaved,
+      ...progressData,
     });
   } catch (err) {
     console.error("Error in getCourse:", err);
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
         message: err instanceof Error ? err.message : String(err),
       },

@@ -2,13 +2,13 @@
 
 import React, { useState } from "react";
 import { ModeToggle } from "./ModeToggle";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import CreateCourseModal from "./CreateCourse";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Course } from "@/types";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 interface NavBarProps {
   otherPage: boolean;
@@ -24,30 +24,32 @@ function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
   return (
     <>
       <nav
-        className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 ${
-          otherPage
-            ? "w-[98vw] max-w-8xl flex items-center justify-center gap-2"
-            : "w-[95vw] max-w-6xl"
-        }`}
+        className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[98vw] max-w-8xl flex items-center justify-center gap-2`}
       >
-        {/* back button */}
-        <Link href="/dashboard">
-        <div
-          className={`backdrop-blur-xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-lg hover:shadow-xl overflow-hidden hover:cursor-pointer transition-all ${
-            otherPage ? "" : "hidden"
-          } px-8 py-6`}
-        >
-          <button
-            className="flex items-center gap-2 text-zinc-900 dark:text-white hover:text-zinc-700 dark:hover:text-zinc-200 transition hover:cursor-pointer"
+        {otherPage ? (
+          <Link href="/dashboard">
+            <div
+              className={`backdrop-blur-xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-lg hover:shadow-xl overflow-hidden hover:cursor-pointer transition-all px-6 py-6`}
+            >
+              <button className="flex items-center gap-2 text-zinc-900 dark:text-white hover:text-zinc-700 dark:hover:text-zinc-200 transition hover:cursor-pointer">
+                ←
+              </button>
+            </div>
+          </Link>
+        ) : (
+          <div
+            className={`backdrop-blur-xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-lg hover:shadow-xl overflow-hidden hover:cursor-pointer transition-all px-6 py-6`}
+            onClick={() => signOut({ callbackUrl: "/" })}
           >
-            ←
-          </button>
-        </div>
-        </Link>
+            <button className="flex items-center text-zinc-900 dark:text-white hover:text-zinc-700 dark:hover:text-zinc-200 transition hover:cursor-pointer">
+              <LogOut size={22} style={{ transform: "scaleX(-1)" }} />
+            </button>
+          </div>
+        )}
+        {/* back button */}
+
         <div
-          className={`backdrop-blur-xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-lg hover:shadow-xl overflow-hidden transition-all ${
-            otherPage ? "w-[90vw] max-w-7xl" : ""
-          }`}
+          className={`backdrop-blur-xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-lg hover:shadow-xl overflow-hidden transition-all w-[90vw] max-w-7xl`}
         >
           <div className="px-6 py-4 flex items-center justify-between">
             {/* Logo */}
@@ -64,21 +66,25 @@ function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
             <div className="flex items-center gap-8">
               {session?.data?.user && (
                 <div className="md:flex items-center gap-6 hidden">
-                <motion.button
-                  onClick={() => setOpen(true)}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1 }}
-                  className="relative px-4 py-2 rounded-lg font-medium transition-all duration-300 text-zinc-900 dark:text-white bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-900 hover:cursor-pointer"
-                >
-                  Create +
-                  <motion.div
-                    layoutId="highlight"
-                    className="absolute inset-0 bg-linear-to-r from-purple-500/20 to-pink-500/20 rounded-lg -z-10"
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  />
-                </motion.button>
-              </div>
+                  <motion.button
+                    onClick={() => setOpen(true)}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                    className="relative px-4 py-2 rounded-lg font-medium transition-all duration-300 text-zinc-900 dark:text-white bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-900 hover:cursor-pointer"
+                  >
+                    Create +
+                    <motion.div
+                      layoutId="highlight"
+                      className="absolute inset-0 bg-linear-to-r from-purple-500/20 to-pink-500/20 rounded-lg -z-10"
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 30,
+                      }}
+                    />
+                  </motion.button>
+                </div>
               )}
 
               <motion.div
@@ -143,6 +149,32 @@ function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
         onClose={() => setOpen(false)}
         onCreated={() => window.location.reload()}
       />
+      {/* Floating Create Button - Mobile Only */}
+      {!otherPage && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-6 right-6 z-50 md:hidden
+    bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600
+    text-white shadow-lg dark:shadow-xl
+    w-14 h-14 rounded-xl flex items-center justify-center
+    transition-all duration-200 active:scale-95"
+        >
+          <svg
+            className="w-8 h-8"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 4v16m8-8H4"
+            ></path>
+          </svg>
+        </button>
+      )}
     </>
   );
 }

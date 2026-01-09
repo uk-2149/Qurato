@@ -13,7 +13,9 @@ type Course = {
   title: string;
   description?: string;
   thumbnail?: string;
-  totalVideos?: number;
+  totalVideos: number;
+  completedLessons: number;
+  percentage: number;
   type: "created" | "saved";
   shareId: string;
   source: "youtube" | "custom";
@@ -53,8 +55,18 @@ export default function AllCourses() {
   }, []);
 
   const handleUpdateCourse = (updated: Course) => {
-    setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-  };
+  setCourses((prev) =>
+    prev.map((c) =>
+      c.id === updated.id
+        ? { 
+            ...c,          // keep old values (like percentage)
+            ...updated,    // override only updated fields
+          }
+        : c
+    )
+  );
+};
+
 
   // const handleCreateCourse = (newCourse: Course) => {
   //   setCourses((prev) => [newCourse, ...prev]);
@@ -322,12 +334,20 @@ function CourseGrid({
               </p>
             )}
 
-            <div className="flex justify-between text-sm text-zinc-500 pt-2">
-              <span>{course.totalVideos ?? 0} lessons</span>
-              <span className="text-indigo-500 group-hover:underline">
-                Open →
-              </span>
-            </div>
+            <div className="flex justify-between items-center text-sm text-zinc-500 pt-2">
+  <span>
+    {course.totalVideos} lessons
+    <span className="ml-2 px-2 py-0.5 text-xs rounded-md 
+      bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+      {course.percentage}% completed
+    </span>
+  </span>
+
+  <span className="text-indigo-500 group-hover:underline">
+    Open →
+  </span>
+</div>
+
           </div>
         </Link>
       ))}

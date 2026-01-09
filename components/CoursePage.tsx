@@ -226,38 +226,49 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   }
 
   const handleSaveCourse = async () => {
-    if (!session.data) {
-      router.push(
-        `/login?callbackUrl=${encodeURIComponent(
-          `/course/${course?.shareId}?save=1`
-        )}`
-      );
-      return;
-    }
+  if (!session.data) {
+    router.push(
+      `/login?callbackUrl=${encodeURIComponent(
+        `/course/${course?.shareId}?save=1`
+      )}`
+    );
+    return;
+  }
 
-    if (!course) return;
+  if (!course) return;
 
-    const prevState = course.isSaved;
+  const prevState = course.isSaved;
 
-    // optimistic toggle
-    setCourse((prev) => (prev ? { ...prev, isSaved: !prev.isSaved } : prev));
+  // optimistic toggle
+  setCourse((prev) => (prev ? { ...prev, isSaved: !prev.isSaved } : prev));
 
-    try {
-      const endpoint = prevState ? "/api/course/unsave" : "/api/course/save";
+  try {
+    let res;
 
-      const res = await fetch(`${endpoint}?courseId=${course.id}`, {
-        method: prevState ? "DELETE" : "POST",
+    if (prevState) {
+      // UNSAVE
+      res = await fetch(`/api/course/unsave?courseId=${course.id}`, {
+        method: "DELETE",
       });
-
-      if (!res.ok) throw new Error("Failed toggling save");
-
-      toast.success(prevState ? "Removed from saved" : "Saved course!");
-    } catch (err) {
-      // rollback
-      setCourse((prev) => (prev ? { ...prev, isSaved: prevState } : prev));
-      toast.error("Something went wrong");
+    } else {
+      // SAVE
+      res = await fetch(`/api/course/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId: course.id }),
+      });
     }
-  };
+
+    if (!res.ok) throw new Error("Failed toggling save");
+
+    toast.success(prevState ? "Removed from saved" : "Saved course!");
+  } catch (err) {
+    // rollback
+    setCourse((prev) => (prev ? { ...prev, isSaved: prevState } : prev));
+    toast.error("Something went wrong");
+  }
+};
+
 
   const toggleComplete = async (lessonId: string) => {
     if (!session.data) {

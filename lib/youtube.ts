@@ -4,7 +4,7 @@ export async function fetchPlaylistVideos(playlistId: string) {
   const API_KEY = process.env.YOUTUBE_API_KEY;
 
   const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=50&key=${API_KEY}`
+    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=120&key=${API_KEY}`
   );
 
   if (!res.ok) {

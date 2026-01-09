@@ -26,7 +26,7 @@ interface CourseLecturePageProps {
   shareId: string;
 }
 
-type CourseWithLessons = Omit<Course, 'completedLessons'> & {
+type CourseWithLessons = Omit<Course, "completedLessons"> & {
   lessons: Lesson[];
   isSaved?: boolean;
   completedLessons?: string[];
@@ -42,6 +42,7 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [descOpen, setDescOpen] = useState(false);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -85,16 +86,40 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   }, []);
 
   useEffect(() => {
-  if (!course) return;
+    if (!course) return;
 
-  const shouldSave = searchParams.get("save");
+    const shouldSave = searchParams.get("save");
 
-  if (shouldSave === "1" && session.status === "authenticated") {
-    handleSaveCourse();
+    if (shouldSave === "1" && session.status === "authenticated") {
+      handleSaveCourse();
 
-    router.replace(`/course/${shareId}`, { scroll: false });
+      router.replace(`/course/${shareId}`, { scroll: false });
+    }
+  }, [session.status, course]);
+
+  useEffect(() => {
+  if (!course || !course.lessons) return;
+
+  // If currentLesson is null, select first uncompleted lesson
+  if (!currentLesson) {
+    const next = course.lessons.find(
+      (l) => !course.completedLessons?.includes(l.id)
+    );
+    setCurrentLesson(next || course.lessons[0]);
+    return;
   }
-}, [session.status, course]);
+
+  // If the selected lesson is completed → auto-play the next uncompleted
+  if (course.completedLessons?.includes(currentLesson.id)) {
+    const next = course.lessons.find(
+      (l) => !course.completedLessons?.includes(l.id)
+    );
+    if (next && next.id !== currentLesson.id) {
+      setCurrentLesson(next);
+      setStartAt(0);
+    }
+  }
+}, [course?.lessons]);
 
 
   function toBaseCourse(course: CourseWithLessons): Course {
@@ -201,90 +226,87 @@ export default function CourseLecturePage({ shareId }: CourseLecturePageProps) {
   }
 
   const handleSaveCourse = async () => {
-  if (!session.data) {
-    router.push(
-      `/login?callbackUrl=${encodeURIComponent(
-        `/course/${course?.shareId}?save=1`
-      )}`
-    );
-    return;
-  }
+    if (!session.data) {
+      router.push(
+        `/login?callbackUrl=${encodeURIComponent(
+          `/course/${course?.shareId}?save=1`
+        )}`
+      );
+      return;
+    }
 
-  if (!course) return;
+    if (!course) return;
 
-  const prevState = course.isSaved;
+    const prevState = course.isSaved;
 
-  // optimistic toggle
-  setCourse((prev) =>
-    prev ? { ...prev, isSaved: !prev.isSaved } : prev
-  );
+    // optimistic toggle
+    setCourse((prev) => (prev ? { ...prev, isSaved: !prev.isSaved } : prev));
 
-  try {
-    const endpoint = prevState ? "/api/course/unsave" : "/api/course/save";
+    try {
+      const endpoint = prevState ? "/api/course/unsave" : "/api/course/save";
 
-    const res = await fetch(`${endpoint}?courseId=${course.id}`, {
-      method: prevState ? "DELETE" : "POST",
-    });
+      const res = await fetch(`${endpoint}?courseId=${course.id}`, {
+        method: prevState ? "DELETE" : "POST",
+      });
 
-    if (!res.ok) throw new Error("Failed toggling save");
+      if (!res.ok) throw new Error("Failed toggling save");
 
-    toast.success(prevState ? "Removed from saved" : "Saved course!");
-  } catch (err) {
-    // rollback
-    setCourse((prev) =>
-      prev ? { ...prev, isSaved: prevState } : prev
-    );
-    toast.error("Something went wrong");
-  }
-};
+      toast.success(prevState ? "Removed from saved" : "Saved course!");
+    } catch (err) {
+      // rollback
+      setCourse((prev) => (prev ? { ...prev, isSaved: prevState } : prev));
+      toast.error("Something went wrong");
+    }
+  };
 
-const toggleComplete = async (lessonId: string) => {
-  if (!session.data) {
-    router.push(`/login?callbackUrl=${encodeURIComponent(`/course/${course?.shareId}`)}`);
-    return;
-  }
+  const toggleComplete = async (lessonId: string) => {
+    if (!session.data) {
+      router.push(
+        `/login?callbackUrl=${encodeURIComponent(`/course/${course?.shareId}`)}`
+      );
+      return;
+    }
 
-  if (!course) return;
+    if (!course) return;
 
-  const isCompleted = course.completedLessons?.includes(lessonId);
+    const isCompleted = course.completedLessons?.includes(lessonId);
 
-  const prevList = course.completedLessons || [];
+    const prevList = course.completedLessons || [];
 
-  // optimistic UI update
-  setCourse((prev) =>
-    prev
-      ? {
-          ...prev,
-          completedLessons: isCompleted
-            ? prevList.filter((id) => id !== lessonId)
-            : [...prevList, lessonId],
-        }
-      : prev
-  );
-
-  try {
-    await fetch("/api/lecture/toggleComplete", {
-      method: "POST",
-      body: JSON.stringify({
-        lectureId: lessonId,
-        courseId: course.id,
-      }),
-    });
-  } catch (err) {
-    // rollback
+    // optimistic UI update
     setCourse((prev) =>
       prev
         ? {
             ...prev,
-            completedLessons: prevList,
+            completedLessons: isCompleted
+              ? prevList.filter((id) => id !== lessonId)
+              : [...prevList, lessonId],
           }
         : prev
     );
 
-    toast.error("Failed to update progress");
-  }
-};
+    try {
+      await fetch("/api/lecture/toggleComplete", {
+        method: "POST",
+        body: JSON.stringify({
+          lectureId: lessonId,
+          courseId: course.id,
+        }),
+      });
+    } catch (err) {
+      // rollback
+      setCourse((prev) =>
+        prev
+          ? {
+              ...prev,
+              completedLessons: prevList,
+            }
+          : prev
+      );
 
+      toast.error("Failed to update progress");
+    }
+  };
 
   function parseDescription(text: string, onSeek: (seconds: number) => void) {
     const regex = /(\b\d{1,2}:\d{2}(?::\d{2})?\b)|(https?:\/\/[^\s]+)/g;
@@ -394,13 +416,15 @@ const toggleComplete = async (lessonId: string) => {
           >
             <div className="group relative bg-zinc-100 dark:bg-black rounded-xl overflow-hidden aspect-video shadow-xl">
               {currentLesson ? (
-                <iframe
-                  key={startAt}
-                  src={`${currentLesson.embedUrl}?start=${startAt}&autoplay=1`}
-                  allow="autoplay; fullscreen"
-                  allowFullScreen
-                  className="w-full h-full"
-                />
+                <>
+                  <iframe
+                    key={startAt}
+                    src={`${currentLesson.embedUrl}?start=${startAt}&autoplay=1&modestbranding=1&rel=0&controls=1&showinfo=0`}
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                    className="w-full h-full"
+                  />
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full text-zinc-500">
                   No lecture selected
@@ -421,6 +445,34 @@ const toggleComplete = async (lessonId: string) => {
               </div>
             </div>
 
+            {currentLesson && (
+              <>
+                {/* PROGRESS ROW */}
+                  <div className="flex items-center justify-between my-4 px-2">
+                    {/* MARK COMPLETE BUTTON */}
+                    <button
+                      onClick={() => toggleComplete(currentLesson.id)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition 
+      ${
+        course.completedLessons?.includes(currentLesson.id)
+          ? "bg-green-600 text-white hover:bg-green-700"
+          : "bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700"
+      }`}
+                    >
+                      {course.completedLessons?.includes(currentLesson.id)
+                        ? "✓ Completed"
+                        : "Mark as Complete"}
+                    </button>
+
+                    {/* PROGRESS COUNT */}
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                      {course.completedLessons?.length || 0} /{" "}
+                      {course.totalVideos} completed
+                    </span>
+                  </div>
+              </>
+            )}
+
             {/* Current Lesson Info */}
             {currentLesson && (
               <div
@@ -428,14 +480,30 @@ const toggleComplete = async (lessonId: string) => {
                 border border-zinc-200 dark:border-zinc-800
                 rounded-xl p-6 space-y-3"
               >
-                <h3 className="text-xl font-semibold">{currentLesson.title}</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold">
+                    {currentLesson.title}
+                  </h3>
 
-                <p className="text-zinc-400 leading-relaxed whitespace-pre-wrap">
-                  {parseDescription(
-                    currentLesson.description || "",
-                    setStartAt
-                  )}
-                </p>
+                  <button
+                    onClick={() => setDescOpen(!descOpen)}
+                    className="px-3 py-1.5 text-sm rounded-lg border 
+      border-zinc-300 dark:border-zinc-700 
+      hover:bg-zinc-200 dark:hover:bg-zinc-800
+      transition"
+                  >
+                    {descOpen ? "Details ▲" : "Details ▼"}
+                  </button>
+                </div>
+
+                {descOpen && (
+                  <p className="text-zinc-400 leading-relaxed whitespace-pre-wrap mt-2">
+                    {parseDescription(
+                      currentLesson.description || "",
+                      setStartAt
+                    )}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -502,78 +570,78 @@ const toggleComplete = async (lessonId: string) => {
                         </p>
                       </div>
 
-                     
-
-                        {/* RIGHT ACTIONS */}
-<div className="flex items-center gap-2 relative">
-
-  {/* COMPLETION TOGGLE */}
-  {session.data?.user?.id && (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        toggleComplete(lesson.id);
-      }}
-      className={`w-6 h-6 rounded-full flex items-center justify-center transition 
+                      {/* RIGHT ACTIONS */}
+                      <div className="flex items-center gap-2 relative">
+                        {/* COMPLETION TOGGLE */}
+                        {session.data?.user?.id && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleComplete(lesson.id);
+                            }}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center transition 
       ${
         course.completedLessons?.includes(lesson.id)
-          ? "bg-gradient-to-br from-purple-500 to-indigo-500 text-white shadow-lg"
+          ? "bg-linear-to-br from-purple-500 to-indigo-500 text-white shadow-lg"
           : "border border-zinc-400 dark:border-zinc-600 text-zinc-400 hover:text-purple-500 hover:border-purple-500"
       }`}
-    >
-      {course.completedLessons?.includes(lesson.id) ? (
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="white"
-          strokeWidth={2.5}
-          viewBox="0 0 24 24"
-        >
-          <path d="M5 13l4 4L19 7" />
-        </svg>
-      ) : (
-        <svg
-          className="w-4 h-4 opacity-60"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2.2}
-          viewBox="0 0 24 24"
-        >
-          <circle cx="12" cy="12" r="9" />
-        </svg>
-      )}
-    </button>
-  )}
+                          >
+                            {course.completedLessons?.includes(lesson.id) ? (
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="white"
+                                strokeWidth={2.5}
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="w-4 h-4 opacity-60"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2.2}
+                                viewBox="0 0 24 24"
+                              >
+                                <circle cx="12" cy="12" r="9" />
+                              </svg>
+                            )}
+                          </button>
+                        )}
 
-  {/* 3-DOT MENU */}
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      setOpenLessonMenu(
-        openLessonMenu === lesson.id ? null : lesson.id
-      );
-    }}
-    className={`p-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 ${
-      session.data?.user?.id == course.authorId ? "" : "hidden"
-    }`}
-  >
-    <MoreVertical size={16} />
-  </button>
+                        {/* 3-DOT MENU */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenLessonMenu(
+                              openLessonMenu === lesson.id ? null : lesson.id
+                            );
+                          }}
+                          className={`p-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 ${
+                            session.data?.user?.id == course.authorId
+                              ? ""
+                              : "hidden"
+                          }`}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
 
-  {openLessonMenu === lesson.id && (
-    <div
-      className="absolute right-0 mt-2 w-32 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50"
-      ref={menuRef}
-    >
-      <MenuItem
-        label="Delete"
-        danger
-        onClick={() => handleDeleteLesson(course.id, lesson.id)}
-      />
-    </div>
-  )}
-</div>
-                     
+                        {openLessonMenu === lesson.id && (
+                          <div
+                            className="absolute right-0 mt-2 w-32 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50"
+                            ref={menuRef}
+                          >
+                            <MenuItem
+                              label="Delete"
+                              danger
+                              onClick={() =>
+                                handleDeleteLesson(course.id, lesson.id)
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

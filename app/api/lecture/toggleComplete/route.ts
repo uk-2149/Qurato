@@ -11,6 +11,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userId = session.user.id;
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
+    
+    if (!isValidObjectId) {
+      return NextResponse.json({ error: "Invalid user ID format" }, { status: 400 });
+    }
+
     const { lectureId, courseId } = await req.json();
 
     if (!lectureId || !courseId) {
@@ -24,7 +31,7 @@ export async function POST(req: Request) {
     let progress = await prisma.userProgress.findUnique({
       where: {
         userId_courseId: {
-          userId: session.user.id,
+          userId: userId,
           courseId,
         },
       },
@@ -33,7 +40,7 @@ export async function POST(req: Request) {
     if (!progress) {
       progress = await prisma.userProgress.create({
         data: {
-          userId: session.user.id,
+          userId: userId,
           courseId,
           completedLessons: [lectureId],
           currentLessonId: lectureId,
@@ -49,7 +56,7 @@ export async function POST(req: Request) {
     const updated = await prisma.userProgress.update({
       where: {
         userId_courseId: {
-          userId: session.user.id,
+          userId: userId,
           courseId,
         },
       },

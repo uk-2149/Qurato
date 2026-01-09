@@ -12,6 +12,13 @@ export async function GET() {
 
     const userId = session.user.id;
 
+    // Validate that userId is a valid MongoDB ObjectId
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
+    
+    if (!isValidObjectId) {
+      return NextResponse.json({ error: "Invalid user ID format" }, { status: 400 });
+    }
+
     const courses = await prisma.course.findMany({
       where: {
         OR: [

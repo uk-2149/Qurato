@@ -6,8 +6,15 @@ import { authOptions } from "@/lib/authOptions";
 export async function DELETE(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.email || !session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
+    
+    if (!isValidObjectId) {
+      return NextResponse.json({ error: "Invalid user ID format" }, { status: 400 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -26,7 +33,7 @@ export async function DELETE(req: Request) {
       select: { authorId: true },
     });
 
-    if (course?.authorId !== session.user.id) {
+    if (course?.authorId !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

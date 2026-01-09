@@ -6,8 +6,15 @@ import { authOptions } from "@/lib/authOptions";
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.email || !session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
+    
+    if (!isValidObjectId) {
+      return NextResponse.json({ error: "Invalid user ID format" }, { status: 400 });
     }
 
     const body = await req.json();
@@ -31,13 +38,13 @@ export async function POST(req: Request) {
     await prisma.savedCourse.upsert({
       where: {
         userId_courseId: {
-          userId: session.user.id,
+          userId: userId,
           courseId,
         },
       },
       update: {},
       create: {
-        userId: session.user.id,
+        userId: userId,
         courseId,
       },
     });

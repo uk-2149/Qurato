@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 interface RegisterProps {
   callbackUrl?: string;
@@ -12,10 +13,12 @@ export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterPro
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async(e: React.FormEvent<HTMLButtonElement>) => {
     try {
         e.preventDefault();
+        setIsLoading(true);
 
         const res = await fetch("api/auth/signup", {
             method: "POST",
@@ -28,6 +31,7 @@ export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterPro
         if (!res.ok) {
             const errorText = await res.text();
             console.error("Signup error:", errorText);
+            setIsLoading(false);
             return;
         }
 
@@ -44,14 +48,17 @@ export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterPro
         if (result?.error) {
             alert(`Error in login`);
             console.log("Error: ", result?.error);
+            setIsLoading(false);
         } 
     } catch (error) {
       console.log(error);
       alert("An unexpected error occurred");
+      setIsLoading(false);
     }
   }
 
   const handleGoogleSignup = () => {
+    setIsLoading(true);
     signIn("google", { callbackUrl: "/" });
   }
 
@@ -105,10 +112,12 @@ export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterPro
           </div>
 
           <button
-            className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition text-white font-medium"
+            className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/50 disabled:cursor-not-allowed transition text-white font-medium flex items-center justify-center gap-2"
             onClick={handleSubmit}
+            disabled={isLoading}
           >
-            Create account
+            {isLoading && <Loader2 size={18} className="animate-spin" />}
+            {isLoading ? "Creating account..." : "Create account"}
           </button>
         </form>
 
@@ -121,15 +130,20 @@ export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterPro
 
         {/* Google Signup */}
         <button
-          className="w-full flex items-center justify-center gap-3 py-3 rounded-lg bg-white text-black font-medium hover:bg-gray-100 transition"
+          className="w-full flex items-center justify-center gap-3 py-3 rounded-lg bg-white text-black font-medium hover:bg-gray-100 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
           onClick={handleGoogleSignup}
+          disabled={isLoading}
         >
-          <img
-            src="https://www.svgrepo.com/show/475656/google-color.svg"
-            className="w-5 h-5"
-            alt="Google"
-          />
-          Continue with Google
+          {isLoading ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              className="w-5 h-5"
+              alt="Google"
+            />
+          )}
+          {isLoading ? "Signing up..." : "Continue with Google"}
         </button>
 
         {/* Footer */}

@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 interface LoginProps {
   callbackUrl?: string;
@@ -11,6 +12,7 @@ interface LoginProps {
 export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     console.log("Callback url:", callbackUrl);
@@ -18,6 +20,7 @@ export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
 
   const handleLogin = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    setIsLoading(true);
     
     try {
         const res = await signIn("credentials", {
@@ -30,14 +33,17 @@ export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
         if (res?.error) {
             alert(`Error in login`);
             console.log("Error: ", res?.error);
+            setIsLoading(false);
         }
     } catch (error) {
       console.log(error);
       alert("An unexpected error occurred");
+      setIsLoading(false);
     }
   };
 
   const handleGoogleLogIn = () => {
+    setIsLoading(true);
     signIn("google", { callbackUrl: callbackUrl });
   }
 
@@ -80,10 +86,12 @@ export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
           </div>
 
           <button
-            className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition text-white font-medium"
+            className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/50 disabled:cursor-not-allowed transition text-white font-medium flex items-center justify-center gap-2"
             onClick={handleLogin}
+            disabled={isLoading}
           >
-            Login
+            {isLoading && <Loader2 size={18} className="animate-spin" />}
+            {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
 
@@ -96,15 +104,20 @@ export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
 
         {/* Google Login */}
         <button
-          className="w-full flex items-center justify-center gap-3 py-3 rounded-lg bg-white text-black font-medium hover:bg-gray-100 transition"
+          className="w-full flex items-center justify-center gap-3 py-3 rounded-lg bg-white text-black font-medium hover:bg-gray-100 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
           onClick={handleGoogleLogIn}
+          disabled={isLoading}
         >
-          <img
-            src="https://www.svgrepo.com/show/475656/google-color.svg"
-            className="w-5 h-5"
-            alt="Google"
-          />
-          Continue with Google
+          {isLoading ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              className="w-5 h-5"
+              alt="Google"
+            />
+          )}
+          {isLoading ? "Signing in..." : "Continue with Google"}
         </button>
 
         {/* Footer */}

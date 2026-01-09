@@ -54,43 +54,50 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       // Handle Google OAuth - create user if doesn't exist
       if (account?.provider === "google" && user.email) {
-        const existingUser = await prisma.user.findUnique({
+        let dbUser = await prisma.user.findUnique({
           where: { email: user.email },
         });
 
-        if (!existingUser) {
-          await prisma.user.create({
+        if (!dbUser) {
+          dbUser = await prisma.user.create({
             data: {
               email: user.email,
-              name: user.name || "",
-              imageUrl: user.image || "",
+              name: user.name || profile?.name || "",
+              imageUrl: user.image || profile?.image || "",
             },
           });
         }
+        
+        // Ensure the user object has the database ID
+        user.id = dbUser.id;
       }
 
       return true;
     },
 
     async jwt({ token, user, trigger, account }) {
-      if (user) {
+      // For Credentials provider
+      if (user && user.id) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.imageUrl = user.imageUrl;
       }
 
-      // Handle Google OAuth - ensure user exists in database
-      if (account?.provider === "google" && !user) {
+      // For Google OAuth - always fetch the database user ID
+      if (account?.provider === "google") {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email as string },
         });
 
         if (dbUser) {
           token.id = dbUser.id;
+          token.email = dbUser.email;
+          token.name = dbUser.name;
+          token.imageUrl = dbUser.imageUrl || undefined;
         }
       }
 

@@ -80,3 +80,12 @@ export interface YouTubeContentDetails {
   licensedContent: boolean;
   projection: "rectangular" | "360";
 }
+
+export interface YouTubeVideoData {
+  title: string;
+  description: string;
+  videoId: string;
+  thumbnail?: string;
+  embedUrl?: string;
+  order: number;
+}

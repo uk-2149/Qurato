@@ -1,8 +1,8 @@
-import { YouTubeVideo, YouTubeVideoListResponse } from "@/types";
+import { YouTubeVideo, YouTubeVideoListResponse, YouTubeVideoData } from "@/types";
 
 export async function fetchPlaylistVideos(playlistId: string) {
   const API_KEY = process.env.YOUTUBE_API_KEY;
-  const allVideos: YouTubeVideo[] = [];
+  const allVideos: YouTubeVideoData[] = [];
   let nextPageToken = "";
   let index = 0;
 

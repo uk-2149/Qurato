@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { YouTubeVideoData } from "@/types";
 import {
   extractVideoId,
   fetchPlaylistVideos,
@@ -9,15 +10,6 @@ import {
   parseDuration,
 } from "@/lib/youtube";
 import { nanoid } from "nanoid";
-
-interface Video {
-  title: string;
-  videoId: string;
-  description: string;
-  embedUrl: string;
-  thumbnail: string;
-  order: number;
-}
 
 export async function POST(req: Request) {
   try {
@@ -144,11 +136,11 @@ export async function POST(req: Request) {
 
       // Create lessons
       await tx.lesson.createMany({
-        data: videos.map((video: Video) => ({
+        data: videos.map((video: YouTubeVideoData) => ({
           title: video.title,
           videoId: video.videoId,
           description: video.description,
-          thumbnail: video.thumbnail,
+          thumbnail: video.thumbnail || null,
           embedUrl: `https://www.youtube.com/embed/${video.videoId}`,
           order: video.order,
           courseId: createdCourse.id,

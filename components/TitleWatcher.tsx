@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 export default function TitleWatcher() {
   useEffect(() => {
     const originalTitle = document.title;
-    const hiddenTitle = "Hope back in!";
+    const hiddenTitle = "Hop back in!";
 
     const handleVisibilityChange = () => {
       document.title = document.hidden ? hiddenTitle : originalTitle;

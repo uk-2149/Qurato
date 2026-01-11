@@ -2,24 +2,40 @@ import { YouTubeVideo, YouTubeVideoListResponse } from "@/types";
 
 export async function fetchPlaylistVideos(playlistId: string) {
   const API_KEY = process.env.YOUTUBE_API_KEY;
+  const allVideos: YouTubeVideo[] = [];
+  let nextPageToken = "";
+  let index = 0;
 
-  const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=120&key=${API_KEY}`
-  );
+  try {
+    do {
+      const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=50&pageToken=${nextPageToken}&key=${API_KEY}`;
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch playlist");
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error?.message || "Failed to fetch");
+
+      const videos = data.items.map((item: any) => {
+        index++;
+        return {
+          title: item.snippet.title,
+          description: item.snippet.description,
+          videoId: item.contentDetails.videoId,
+          thumbnail: item.snippet.thumbnails?.high?.url,
+          order: index,
+        };
+      });
+
+      allVideos.push(...videos);
+
+      nextPageToken = data.nextPageToken || "";
+    } while (nextPageToken);
+
+    return allVideos;
+  } catch (err) {
+    console.error("YT playlist fetch error:", err);
+    throw err;
   }
-
-  const data = await res.json();
-
-  return data.items.map((item: any, index: number) => ({
-    title: item.snippet.title,
-    description: item.snippet.description,
-    videoId: item.contentDetails.videoId,
-    thumbnail: item.snippet.thumbnails?.high?.url,
-    order: index,
-  }));
 }
 
 export const extractVideoId = (url: string) => {
@@ -58,7 +74,9 @@ export function parseDuration(iso: string): number {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
-export async function fetchVideoMetadata(videoIds: string[]): Promise<YouTubeVideo[]> {
+export async function fetchVideoMetadata(
+  videoIds: string[]
+): Promise<YouTubeVideo[]> {
   const apiKey = process.env.YOUTUBE_API_KEY!;
   const batches = chunkArray(videoIds, 50);
 

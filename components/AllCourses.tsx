@@ -335,9 +335,13 @@ function CourseGrid({
               </div>
             </div>
 
-            {course.description && (
+            {course.description ? (
               <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">
                 {course.description}
+              </p>
+            ) : (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">
+                No desc..
               </p>
             )}
 

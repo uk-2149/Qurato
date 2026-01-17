@@ -4,6 +4,8 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface LoginProps {
   callbackUrl?: string;
@@ -13,10 +15,11 @@ export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     console.log("Callback url:", callbackUrl);
-  }, []);
+  }, [callbackUrl]);
 
   const handleLogin = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -24,20 +27,25 @@ export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
     
     try {
         const res = await signIn("credentials", {
-        redirect: true,
-        email,
-        password,
-        callbackUrl: callbackUrl,
+          redirect: false,
+          email,
+          password,
+          callbackUrl: callbackUrl,
         });
 
         if (res?.error) {
-            alert(`Error in login`);
+            toast.error("Invalid email or password");
             console.log("Error: ", res?.error);
             setIsLoading(false);
+            return;
         }
+
+        toast.success("Welcome back!");
+        router.push(callbackUrl);
+        router.refresh();
     } catch (error) {
       console.log(error);
-      alert("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
       setIsLoading(false);
     }
   };

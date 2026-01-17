@@ -24,7 +24,7 @@ export default function AdminAnalytics() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/stats")
+    fetch("/api/analytics")
       .then((res) => res.json())
       .then(setStats)
       .finally(() => setLoading(false));

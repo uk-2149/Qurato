@@ -47,7 +47,7 @@ export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterPro
       toast.success("Account created! Logging you in...");
 
       const result = await signIn("credentials", {
-        redirect: false,
+        redirect: true,
         email,
         password,
         callbackUrl: callbackUrl,

@@ -19,7 +19,7 @@ export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
 
   useEffect(() => {
     console.log("Callback url:", callbackUrl);
-  }, [callbackUrl]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -27,7 +27,7 @@ export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
     
     try {
         const res = await signIn("credentials", {
-          redirect: false,
+          redirect: true,
           email,
           password,
           callbackUrl: callbackUrl,

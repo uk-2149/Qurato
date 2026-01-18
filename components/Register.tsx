@@ -38,7 +38,7 @@ export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterPro
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (!res?.ok) {
         toast.error(data.error || "Signup failed");
         setIsLoading(false);
         return;
@@ -47,7 +47,7 @@ export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterPro
       toast.success("Account created! Logging you in...");
 
       const result = await signIn("credentials", {
-        redirect: true,
+        redirect: false,
         email,
         password,
         callbackUrl: callbackUrl,
@@ -55,10 +55,9 @@ export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterPro
 
       if (result?.error) {
         toast.error("Account created, but automatic login failed. Please login manually.");
-        router.push("/login");
+        router.push(`/login?callbackUrl=${callbackUrl}`);
       } else {
         router.push(callbackUrl);
-        router.refresh();
       }
     } catch (error) {
       console.error(error);

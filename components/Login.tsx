@@ -27,7 +27,7 @@ export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
     
     try {
         const res = await signIn("credentials", {
-          redirect: true,
+          redirect: false,
           email,
           password,
           callbackUrl: callbackUrl,
@@ -42,7 +42,6 @@ export default function LoginPage({ callbackUrl = "/dashboard" }: LoginProps) {
 
         toast.success("Welcome back!");
         router.push(callbackUrl);
-        router.refresh();
     } catch (error) {
       console.log(error);
       toast.error("An unexpected error occurred");

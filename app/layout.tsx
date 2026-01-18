@@ -4,6 +4,7 @@ import "./globals.css";
 import AppProviders from "@/components/providers/AppProviders";
 import TitleWatcher from "../components/TitleWatcher";
 import { Analytics } from "@vercel/analytics/next"
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <AppProviders>
           <TitleWatcher />
           {children}
+          <Toaster position="top-center" expand={true} richColors />
           <Analytics />
         </AppProviders>
       </body>

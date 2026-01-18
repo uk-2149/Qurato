@@ -4,6 +4,8 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface RegisterProps {
   callbackUrl?: string;
@@ -14,48 +16,55 @@ export default function RegisterPage({ callbackUrl = "/dashboard" }: RegisterPro
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async(e: React.FormEvent<HTMLButtonElement>) => {
-    try {
         e.preventDefault();
         setIsLoading(true);
 
-        const res = await fetch("api/auth/signup", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ name, email, password }),
-        })
+    // Simple frontend validation before even hitting the API
+    if (!name || !email || !password) {
+      toast.error("Please fill in all fields");
+      setIsLoading(false);
+      return;
+    }
 
-        if (!res.ok) {
-            const errorText = await res.text();
-            console.error("Signup error:", errorText);
-            setIsLoading(false);
-            return;
-        }
+    try {
+      const res = await fetch("api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-        const data = await res.json();
-        console.log("Signup successful:", data);
+      const data = await res.json();
 
-        const result = await signIn("credentials", {
-        redirect: true,
+      if (!res?.ok) {
+        toast.error(data.error || "Signup failed");
+        setIsLoading(false);
+        return;
+      }
+
+      toast.success("Account created! Logging you in...");
+
+      const result = await signIn("credentials", {
+        redirect: false,
         email,
         password,
         callbackUrl: callbackUrl,
-        });
+      });
 
-        if (result?.error) {
-            alert(`Error in login`);
-            console.log("Error: ", result?.error);
-            setIsLoading(false);
-        } 
+      if (result?.error) {
+        toast.error("Account created, but automatic login failed. Please login manually.");
+        router.push(`/login?callbackUrl=${callbackUrl}`);
+      } else {
+        router.push(callbackUrl);
+      }
     } catch (error) {
-      console.log(error);
-      alert("An unexpected error occurred");
+      console.error(error);
+      toast.error("An unexpected error occurred");
       setIsLoading(false);
     }
-  }
+  };
 
   const handleGoogleSignup = () => {
     setIsLoading(true);

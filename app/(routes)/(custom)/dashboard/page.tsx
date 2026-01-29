@@ -4,6 +4,8 @@ import NavBar from "@/components/NavBar";
 import AllCourses from "@/components/AllCourses";
 import Private from "@/components/auth/Private";
 import { redirect } from "next/navigation";
+import DailyTargetPrompt from "@/components/DailyTargetPrompt";
+import WeeklyCalendar from "@/components/WeeklyCalendar";
 
 export default async function Page() {
   const session = await getServerSession(authOptions);
@@ -19,7 +21,9 @@ export default async function Page() {
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white mb-6">
           Hi {session.user?.name}, ready to learn?
         </h1>
-
+        
+        <DailyTargetPrompt />
+        <WeeklyCalendar />
         <AllCourses />
       </div>
     </div>

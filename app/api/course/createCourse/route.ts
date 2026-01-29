@@ -134,17 +134,27 @@ export async function POST(req: Request) {
         },
       });
 
-      // Create lessons
-      await tx.lesson.createMany({
-        data: videos.map((video: YouTubeVideoData) => ({
+      // Fetch detailed metadata for playlist videos to get Duration
+      const videoIds = videos.map(v => v.videoId);
+      const detailedVideos = await fetchVideoMetadata(videoIds);
+      const detailsMap = new Map(detailedVideos.map(v => [v.id, v]));
+      const lessonsData = videos.map(video => {
+      const details = detailsMap.get(video.videoId);
+      return {
           title: video.title,
           videoId: video.videoId,
           description: video.description,
-          thumbnail: video.thumbnail || null,
+          thumbnail: video.thumbnail || details?.snippet?.thumbnails?.high?.url || null,
           embedUrl: `https://www.youtube.com/embed/${video.videoId}`,
           order: video.order,
           courseId: createdCourse.id,
-        })),
+          duration: details ? parseDuration(details.contentDetails.duration) : 0
+        };
+      });
+
+      // Create lessons
+      await tx.lesson.createMany({
+        data: lessonsData
       });
 
       // ✅ IMPORTANT: return something from the transaction

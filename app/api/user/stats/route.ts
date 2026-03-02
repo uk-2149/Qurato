@@ -7,7 +7,8 @@ import { getTodayDate, isSameDay } from "@/lib/dateUtils";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const limitParam = searchParams.get("limit");
@@ -25,13 +26,14 @@ export async function GET(req: Request) {
     yesterday.setDate(yesterday.getDate() - 1);
 
     const metDays = activities
-      .filter(a => a.isTargetMet)
-      .map(a => new Date(a.date).getTime())
+      .filter((a) => a.isTargetMet)
+      .map((a) => new Date(a.date).getTime())
       .sort((a, b) => b - a);
 
     if (metDays.length > 0) {
       const lastMetDate = new Date(metDays[0]);
-      const isStreakAlive = isSameDay(lastMetDate, today) || isSameDay(lastMetDate, yesterday);
+      const isStreakAlive =
+        isSameDay(lastMetDate, today) || isSameDay(lastMetDate, yesterday);
 
       if (isStreakAlive) {
         currentStreak = 1;
@@ -69,90 +71,116 @@ export async function GET(req: Request) {
     }
     longestStreak = Math.max(longestStreak, tempStreak);
 
-
     const totals = activities.reduce(
       (acc, act) => ({
         videos: acc.videos + act.videosWatched,
         minutes: acc.minutes + act.minutesSpent,
       }),
-      { videos: 0, minutes: 0 }
+      { videos: 0, minutes: 0 },
     );
 
-    let resultHistory = activities;
-    let weeklyData = [];
+    const weeklyData = [];
 
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
+    const startOfWeek = new Date(today);
+    const dayOfWeek = startOfWeek.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek); // go back to Sunday
 
-      const activity = activities.find(a => isSameDay(new Date(a.date), d));
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startOfWeek);
+      d.setDate(d.getDate() + i);
+
+      const activity = activities.find((a) => isSameDay(new Date(a.date), d));
 
       weeklyData.push({
         date: d.toISOString(),
         isTargetMet: activity ? activity.isTargetMet : false,
         videosWatched: activity ? activity.videosWatched : 0,
-        minutesSpent: activity ? activity.minutesSpent : 0
+        minutesSpent: activity ? activity.minutesSpent : 0,
+        // optional: add this for easier frontend highlighting
+        isToday: isSameDay(d, today),
       });
     }
 
     return NextResponse.json({
       streaks: { current: currentStreak, longest: longestStreak },
       lifetime: totals,
-      history: activities, 
-      weekly: weeklyData,
+      history: activities,
+      weekly: weeklyData, // now Sun → Sat
       periodStats: {
         week: {
-          videos: activities.filter(a => {
-            const d = new Date(a.date);
-            const now = new Date();
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
-            startOfWeek.setHours(0, 0, 0, 0);
-            return d >= startOfWeek;
-          }).reduce((acc, curr) => acc + curr.videosWatched, 0),
-          minutes: activities.filter(a => {
-            const d = new Date(a.date);
-            const now = new Date();
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
-            startOfWeek.setHours(0, 0, 0, 0);
-            return d >= startOfWeek;
-          }).reduce((acc, curr) => acc + curr.minutesSpent, 0),
+          videos: activities
+            .filter((a) => {
+              const d = new Date(a.date);
+              const now = new Date();
+              const startOfWeek = new Date(now);
+              startOfWeek.setDate(
+                now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1),
+              );
+              startOfWeek.setHours(0, 0, 0, 0);
+              return d >= startOfWeek;
+            })
+            .reduce((acc, curr) => acc + curr.videosWatched, 0),
+          minutes: activities
+            .filter((a) => {
+              const d = new Date(a.date);
+              const now = new Date();
+              const startOfWeek = new Date(now);
+              startOfWeek.setDate(
+                now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1),
+              );
+              startOfWeek.setHours(0, 0, 0, 0);
+              return d >= startOfWeek;
+            })
+            .reduce((acc, curr) => acc + curr.minutesSpent, 0),
         },
         month: {
-          videos: activities.filter(a => {
-            const d = new Date(a.date);
-            const now = new Date();
-            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-          }).reduce((acc, curr) => acc + curr.videosWatched, 0),
-          minutes: activities.filter(a => {
-            const d = new Date(a.date);
-            const now = new Date();
-            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-          }).reduce((acc, curr) => acc + curr.minutesSpent, 0),
-        }
+          videos: activities
+            .filter((a) => {
+              const d = new Date(a.date);
+              const now = new Date();
+              return (
+                d.getMonth() === now.getMonth() &&
+                d.getFullYear() === now.getFullYear()
+              );
+            })
+            .reduce((acc, curr) => acc + curr.videosWatched, 0),
+          minutes: activities
+            .filter((a) => {
+              const d = new Date(a.date);
+              const now = new Date();
+              return (
+                d.getMonth() === now.getMonth() &&
+                d.getFullYear() === now.getFullYear()
+              );
+            })
+            .reduce((acc, curr) => acc + curr.minutesSpent, 0),
+        },
       },
       insights: {
         mostActiveDay: (() => {
           if (activities.length === 0) return "N/A";
 
-          const bestDay = activities.reduce((prev, current) =>
-            (prev.videosWatched > current.videosWatched) ? prev : current
-            , activities[0]);
+          const bestDay = activities.reduce(
+            (prev, current) =>
+              prev.videosWatched > current.videosWatched ? prev : current,
+            activities[0],
+          );
 
           if (bestDay.videosWatched === 0) return "N/A";
 
-          return new Date(bestDay.date).toLocaleDateString('en-US', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'short'
+          return new Date(bestDay.date).toLocaleDateString("en-US", {
+            weekday: "long",
+            day: "numeric",
+            month: "short",
           });
-        })()
-      }
+        })(),
+      },
     });
-
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

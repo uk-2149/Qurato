@@ -2,19 +2,19 @@
 
 import { useState } from "react";
 import { ModeToggle } from "./ModeToggle";
-import { LogOut, X } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import CreateCourseModal from "./CreateCourse";
 import Link from "next/link";
-import { Course } from "@/types";
+// import { Course } from "@/types";
 import { signOut, useSession } from "next-auth/react";
 
 interface NavBarProps {
   otherPage: boolean;
-  handleCreateCourse?: (newCourse: Course) => void;
+  // handleCreateCourse?: (newCourse: Course) => void;
 }
 
-function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
+function NavBar({ otherPage }: NavBarProps) {
   //   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [open, setOpen] = useState(false);
 
@@ -62,7 +62,7 @@ function NavBar({ otherPage, handleCreateCourse }: NavBarProps) {
                 Qurato
               </motion.h1>
               <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700 dark:bg-purple-700/20 dark:text-purple-300 border border-purple-200 dark:border-purple-700/40 translate-y-0.5">
-                v1.0
+                v2.0
               </span>
             </div>
 

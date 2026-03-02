@@ -89,3 +89,22 @@ export interface YouTubeVideoData {
   embedUrl?: string;
   order: number;
 }
+
+export interface HistoryEntry {
+  date: string;
+  videosWatched?: number;
+  minutesSpent?: number;
+  isTargetMet?: boolean;
+}
+
+export interface UserStatsData {
+  streaks?: { current: number; longest: number };
+  today?: { completed: number };
+  lifetime?: { videos: number; minutes: number };
+  periodStats?: {
+    week?: { videos: number; minutes: number };
+    month?: { videos: number; minutes: number };
+  };
+  insights?: { mostActiveDay?: string };
+  history?: Array<HistoryEntry>;
+}

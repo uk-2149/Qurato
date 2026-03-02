@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     }
 
     // Handle Progress
-    let progress = await prisma.userProgress.findUnique({
+    const progress = await prisma.userProgress.findUnique({
       where: { userId_courseId: { userId, courseId } },
     });
 

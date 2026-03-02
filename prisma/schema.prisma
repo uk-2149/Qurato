@@ -25,12 +25,17 @@ model User {
   dailyActivities DailyActivity[]
 }
 
+enum TargetType {
+  VIDEOS
+  MINUTES
+}
+
 model LearningTarget {
   id               String     @id @default(auto()) @map("_id") @db.ObjectId
   userId           String     @unique @db.ObjectId
   user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  type             String     @default("VIDEOS")
+  type             TargetType
   value            Int
   lastConfirmedAt  DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
